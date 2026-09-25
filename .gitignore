@@ -1,0 +1,26 @@
+# === Maven Output ===
+target/
+*.tag
+*.jar
+*.war
+*.ear
+*.rar
+
+# VS Code
+!.vscode/settings.json
+.vscode
+
+# === OS & System Files ===
+.DS_Store
+Thumbs.db
+
+# === Logs & Temporary Files ===
+*.log
+*.tmp
+
+# === Maven Wrapper ===
+!.mvn/wrapper/maven-wrapper.properties
+.mvn/wrapper/maven-wrapper.jar
+
+# === Node.js ===
+node_modules
