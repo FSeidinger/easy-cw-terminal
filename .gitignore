@@ -7,8 +7,8 @@ target/
 *.rar
 
 # VS Code
+.vscode/*
 !.vscode/settings.json
-.vscode
 
 # === OS & System Files ===
 .DS_Store

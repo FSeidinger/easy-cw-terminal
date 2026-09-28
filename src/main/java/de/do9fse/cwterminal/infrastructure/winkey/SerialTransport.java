@@ -5,6 +5,10 @@ import java.util.Objects;
 
 import com.fazecast.jSerialComm.SerialPort;
 
+import de.do9fse.cwterminal.core.model.KeyerCommand;
+import de.do9fse.cwterminal.core.port.out.WinKeyTransport;
+import de.do9fse.cwterminal.infrastructure.winkey.v2.AdminCommand;
+
 public class SerialTransport implements WinKeyTransport {
     private final SerialPort serialPort;
 
@@ -25,22 +29,39 @@ public class SerialTransport implements WinKeyTransport {
     }
 
     @Override
-    public void write(final byte[] data) throws IOException {
-        Objects.requireNonNull(data, "Data must not be null");
-        if (!serialPort.isOpen()) {
-            throw new IOException("Serial port is not connected");
-        }
-
-        final long bytesWritten = serialPort.writeBytes(data, data.length);
-        if (bytesWritten != data.length) {
-            throw new IOException("Could not write complete serial data");
+    public void close() throws IOException {
+        if (serialPort.isOpen() && !serialPort.closePort()) {
+            throw new IOException("Could not close serial port: " + serialPort.getSystemPortName());
         }
     }
 
     @Override
-    public void close() throws IOException {
-        if (serialPort.isOpen() && !serialPort.closePort()) {
-            throw new IOException("Could not close serial port: " + serialPort.getSystemPortName());
+    public void sendCommand(KeyerCommand command) throws IOException {
+        switch (command) {
+            case KeyerCommand.OpenHostCommand openHostCommand -> sendOpenHostCommand();
+            case KeyerCommand.SendTextCommand sendTextCommand -> sendTextCommand(sendTextCommand);
+            
+            default -> throw new IllegalArgumentException("Unsupported command type: " + command.getClass().getName());
+        }
+    }
+
+    private void sendOpenHostCommand() throws IOException {
+        final AdminCommand openHostCommand = AdminCommand.hostOpen();
+        sendBuffer(openHostCommand.getCommandBytes());
+    }
+
+    private void sendTextCommand(final KeyerCommand.SendTextCommand command) throws IOException {
+        final byte[] textBytes = command.text().getBytes();
+        sendBuffer(textBytes);
+    }
+
+    private void sendBuffer(final byte[] buffer) throws IOException {
+        final int bufferLength = buffer.length;
+
+        final int bytesWritten = serialPort.writeBytes(buffer, bufferLength);
+
+        if (bytesWritten != bufferLength) {
+            throw new IOException("Could only write " + bytesWritten + " out of " + bufferLength + " bytes to serial port: " + serialPort.getSystemPortName());
         }
     }
 }

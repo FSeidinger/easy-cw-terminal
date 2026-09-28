@@ -1,7 +1,9 @@
 {
     "cSpell.ignoreWords": [
         "fazecast",
-        "mvnw"
+        "inmemory",
+        "mvnw",
+        "testtools"
     ],
     
     "cSpell.words": [
