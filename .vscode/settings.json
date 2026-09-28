@@ -1,5 +1,16 @@
 {
     "cSpell.ignoreWords": [
+        "fazecast",
         "mvnw"
-    ]
+    ],
+    
+    "cSpell.words": [
+        "CWTerminal",
+        "Keyer",
+        "WinKey",
+        "Winkeyer"
+    ],
+
+    "java.configuration.updateBuildConfiguration": "interactive",
+    "java.codeGeneration.addFinalForNewDeclaration": "all"
 }
