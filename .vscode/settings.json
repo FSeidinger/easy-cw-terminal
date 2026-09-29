@@ -2,6 +2,7 @@
     "cSpell.ignoreWords": [
         "fazecast",
         "inmemory",
+        "logback",
         "mvnw",
         "testtools"
     ],
