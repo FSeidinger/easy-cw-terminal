@@ -1,4 +1,4 @@
-package de.do9fse.cwterminal.infrastructure.winkey;
+package de.do9fse.cwterminal.infrastructure.winkey.transport.serial;
 
 import com.fazecast.jSerialComm.SerialPort;
 

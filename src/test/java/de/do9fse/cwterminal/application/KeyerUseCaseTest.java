@@ -16,7 +16,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import de.do9fse.cwterminal.core.model.KeyerCommand.OpenHostCommand;
 import de.do9fse.cwterminal.core.model.KeyerSession;
 import de.do9fse.cwterminal.core.port.out.SessionRepository;
-import de.do9fse.cwterminal.core.port.out.WinKeyTransport;
+import de.do9fse.cwterminal.core.port.out.WinKeySender;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("Keyer use case tests")
@@ -25,7 +25,7 @@ public class KeyerUseCaseTest {
     private SessionRepository sessionRepository;
 
     @Mock
-    private WinKeyTransport transport;
+    private WinKeySender transport;
 
     private KeyerSession session;
     
