@@ -64,7 +64,7 @@ public class KeyerUseCaseTest {
 
         // Send second OpenHostCommand -> should throw IllegalStateException due to pending state
         final Exception exception = assertThrows(IllegalStateException.class, () -> keyerUseCase.handleHostOpenCommand(command));
-        assertEquals("Open host command is already pending", exception.getMessage());
+        assertEquals("Session already started", exception.getMessage());
 
         // Verify interactions
         final InOrder inOrder = inOrder(sessionRepository, transport);

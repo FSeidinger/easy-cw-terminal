@@ -12,21 +12,26 @@ import org.slf4j.LoggerFactory;
 import com.fazecast.jSerialComm.SerialPortTimeoutException;
 
 import de.do9fse.cwterminal.core.model.KeyerCommand;
+import de.do9fse.cwterminal.core.model.KeyerEvent.HostOpenedEvent;
+import de.do9fse.cwterminal.core.model.KeyerVersion;
+import de.do9fse.cwterminal.core.port.out.WinKeyReceiver;
 
 public class WinKeyReceiverThread {
     private static final Logger LOGGER = LoggerFactory.getLogger(WinKeyReceiverThread.class);
 
     private final ByteTransport transport;
     private final KeyerCommandQueue commandQueue;
+    private final WinKeyReceiver receiver;
 
     private final AtomicBoolean running = new AtomicBoolean(false);
     private volatile Thread receiverLoop;
 
     private final HexFormat formatter = HexFormat.of().withPrefix("0x");
 
-    public WinKeyReceiverThread(final ByteTransport transport, final KeyerCommandQueue commandQueue) {
+    public WinKeyReceiverThread(final ByteTransport transport, final KeyerCommandQueue commandQueue, final WinKeyReceiver receiver) {
         this.transport = Objects.requireNonNull(transport, "Transport must not be null");
         this.commandQueue = Objects.requireNonNull(commandQueue, "Keyer command queue must not be null");
+        this.receiver = Objects.requireNonNull(receiver, "Receiver must not be null");
     }
 
     public synchronized void start() {
@@ -114,7 +119,14 @@ public class WinKeyReceiverThread {
         }
 
         switch (command) {
-            case KeyerCommand.OpenHostCommand openHostCommand -> LOGGER.info("Received version {}", formatter.toHexDigits(receivedByte));
+            case KeyerCommand.OpenHostCommand openHostCommand -> {
+                final int majorVersion = receivedByte / 10;
+                final int minorVersion = receivedByte % 10;
+                final KeyerVersion version = new KeyerVersion(majorVersion, minorVersion);
+                final HostOpenedEvent event = new HostOpenedEvent(version);
+                this.receiver.on(event);
+            }
+
             default -> LOGGER.warn("Unknown command {}", command);
         }
     }

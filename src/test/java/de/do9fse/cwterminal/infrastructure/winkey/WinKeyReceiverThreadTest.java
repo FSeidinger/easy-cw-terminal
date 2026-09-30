@@ -18,6 +18,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.fazecast.jSerialComm.SerialPortTimeoutException;
 
+import de.do9fse.cwterminal.core.port.out.WinKeyReceiver;
+
 @DisplayName("WinKey receiver thread tests")
 @ExtendWith(MockitoExtension.class)
 class WinKeyReceiverThreadTest {
@@ -27,18 +29,21 @@ class WinKeyReceiverThreadTest {
     @Mock
     private KeyerCommandQueue queue;
 
-    private WinKeyReceiverThread receiver;
+    @Mock
+    private WinKeyReceiver receiver;
+
+    private WinKeyReceiverThread receiverThread;
 
     @BeforeEach
     void setUp() throws Exception {
-        this.receiver = new WinKeyReceiverThread(transport, queue);
+        this.receiverThread = new WinKeyReceiverThread(transport, queue, receiver);
     }
 
     @Test
     @DisplayName("Tests that the receiver thread can be started")
     void canStartReceiver() throws Exception {
         when(transport.receive()).thenThrow(SerialPortTimeoutException.class);
-        receiver.start();
+        receiverThread.start();
         assertTrue(waitOnRunning());
     }
 
@@ -46,11 +51,11 @@ class WinKeyReceiverThreadTest {
     @DisplayName("Tests that the receiver thread can be stopped")
     void stopInterruptsRunningThread() throws Exception {
         when(transport.receive()).thenThrow(SerialPortTimeoutException.class);
-        receiver.start();
+        receiverThread.start();
         waitOnRunning();
-        receiver.stop();
+        receiverThread.stop();
 
-        assertFalse(receiver.isRunning());
+        assertFalse(receiverThread.isRunning());
     }
 
     @Test
@@ -59,19 +64,20 @@ class WinKeyReceiverThreadTest {
         final ByteTransport transport = Mockito.mock(ByteTransport.class);
         final KeyerCommandQueue commandQueue = Mockito.mock(KeyerCommandQueue.class);
 
-        assertThrows(NullPointerException.class, () -> new WinKeyReceiverThread(null, commandQueue));
-        assertThrows(NullPointerException.class, () -> new WinKeyReceiverThread(transport, null));
+        assertThrows(NullPointerException.class, () -> new WinKeyReceiverThread(null, commandQueue, receiver));
+        assertThrows(NullPointerException.class, () -> new WinKeyReceiverThread(transport, null, receiver));
+        assertThrows(NullPointerException.class, () -> new WinKeyReceiverThread(transport, commandQueue, null));
     }
 
     private boolean waitOnRunning() throws Exception {
         final Duration waitTime = Duration.ofSeconds(5);
         final Instant deadLine = Instant.now().plus(waitTime);
 
-        while (!receiver.isRunning() && Instant.now().isBefore(deadLine)) {
+        while (!receiverThread.isRunning() && Instant.now().isBefore(deadLine)) {
             Thread.sleep(100);
         }
 
-        return receiver.isRunning();
+        return receiverThread.isRunning();
 
     }
 }

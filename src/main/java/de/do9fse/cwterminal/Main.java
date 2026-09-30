@@ -7,6 +7,12 @@ import org.slf4j.LoggerFactory;
 
 import com.fazecast.jSerialComm.SerialPort;
 
+import de.do9fse.cwterminal.application.KeyerEventReceiver;
+import de.do9fse.cwterminal.application.KeyerUseCase;
+import de.do9fse.cwterminal.core.model.KeyerCommand.OpenHostCommand;
+import de.do9fse.cwterminal.core.model.KeyerSession;
+import de.do9fse.cwterminal.core.port.out.SessionRepository;
+import de.do9fse.cwterminal.infrastructure.persistence.inmemory.InMemorySessionRepository;
 import de.do9fse.cwterminal.infrastructure.winkey.KeyerCommandQueue;
 import de.do9fse.cwterminal.infrastructure.winkey.WinKeyReceiverThread;
 import de.do9fse.cwterminal.infrastructure.winkey.WinKeySenderAdapter;
@@ -99,7 +105,15 @@ public final class Main {
     }
 
     private void createReceiver() {
-        this.receiver = new WinKeyReceiverThread(this.transport, this.queue);
+        final SessionRepository repository = new InMemorySessionRepository();
+        
+        final KeyerSession session = repository.loadSession();
+        final OpenHostCommand command = new OpenHostCommand();
+        session.handleCommand(command);
+
+        final KeyerEventReceiver receiver = new KeyerEventReceiver(repository);
+
+        this.receiver = new WinKeyReceiverThread(this.transport, this.queue, receiver);
         this.receiver.start();
     }
 

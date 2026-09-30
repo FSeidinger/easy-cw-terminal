@@ -33,7 +33,7 @@ class KeyerSessionTest {
     @DisplayName("Tests that session rejects open host command if pending")
     void rejectsOpenHostCommandIfPending() {
         givenTheSessionIsPending();
-        final Exception exception = assertThrows(IllegalArgumentException.class, () -> whenSendingOpenHostCommand());
+        final Exception exception = assertThrows(IllegalStateException.class, () -> whenSendingOpenHostCommand());
         assertEquals("Session already started", exception.getMessage());
     }
 
@@ -41,7 +41,7 @@ class KeyerSessionTest {
     @DisplayName("Tests that session rejects open host command if open")
     void rejectsOpenHostCommandIfOpen() {
         givenTheSessionIsOpen();
-        final Exception exception = assertThrows(IllegalArgumentException.class, () -> whenSendingOpenHostCommand());
+        final Exception exception = assertThrows(IllegalStateException.class, () -> whenSendingOpenHostCommand());
         assertEquals("Session already started", exception.getMessage());
     }
     

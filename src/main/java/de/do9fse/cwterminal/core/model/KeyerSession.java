@@ -1,5 +1,8 @@
 package de.do9fse.cwterminal.core.model;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import de.do9fse.cwterminal.core.model.KeyerCommand.OpenHostCommand;
 import de.do9fse.cwterminal.core.model.KeyerEvent.HostOpenedEvent;
 
@@ -23,6 +26,8 @@ import de.do9fse.cwterminal.core.model.KeyerEvent.HostOpenedEvent;
  * </p>
  */
 public class KeyerSession {
+    private static final Logger LOGGER = LoggerFactory.getLogger(KeyerSession.class);
+
     public enum SessionState {
         CLOSED,
         PENDING,
@@ -35,6 +40,8 @@ public class KeyerSession {
     public KeyerSession() {
         this.state = SessionState.CLOSED;
         this.version = new KeyerVersion(1, 0);
+
+        LOGGER.info("Session created");
     }
 
     public SessionState getSessionState() {
@@ -47,14 +54,27 @@ public class KeyerSession {
 
     public void handleCommand(final OpenHostCommand command) {
         if (state != SessionState.CLOSED) {
-            throw new IllegalArgumentException("Session already started");
+            throw new IllegalStateException("Session already started");
         }
+
+        LOGGER.info("Handling command: {}", command);
 
         this.state = SessionState.PENDING;
     }
 
     public void on(final HostOpenedEvent event) {
+        if (state != SessionState.PENDING) {
+            throw new IllegalStateException("Session is not pending");
+            
+        }
+        LOGGER.info("Received event: {}", event);
+
         this.version = event.version();
         this.state = SessionState.OPEN;
+    }
+
+    @Override
+    public String toString() {
+        return "KeyerSession [state=" + state + ", version=" + version + "]";
     }
 }
