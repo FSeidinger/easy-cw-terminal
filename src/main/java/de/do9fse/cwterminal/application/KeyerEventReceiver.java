@@ -9,7 +9,7 @@ import de.do9fse.cwterminal.core.model.KeyerEvent;
 import de.do9fse.cwterminal.core.model.KeyerSession;
 import de.do9fse.cwterminal.core.port.out.ApplicationContext;
 import de.do9fse.cwterminal.core.port.out.WinKeyReceiver;
-
+import de.do9fse.cwterminal.infrastructure.winkey.CommandFactory;
 import de.do9fse.cwterminal.core.model.KeyerEvent.HostOpenedEvent;
 
 public class KeyerEventReceiver implements WinKeyReceiver {
@@ -26,7 +26,12 @@ public class KeyerEventReceiver implements WinKeyReceiver {
         final KeyerSession session = repository.getSession();
 
         switch (event) {
-            case HostOpenedEvent hostOpenedEvent -> session.on(hostOpenedEvent);
+            case HostOpenedEvent e -> {
+                session.on(e);
+                final CommandFactory commandFactory = new CommandFactory(e.version());
+                repository.setFactory(commandFactory);
+            }
+            
             default -> LOGGER.error("Unknown event type {}", event.getClass().getName());
         }
     }

@@ -2,8 +2,12 @@ package de.do9fse.cwterminal.infrastructure.winkey;
 
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 
 import javax.naming.OperationNotSupportedException;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import de.do9fse.cwterminal.core.model.KeyerVersion;
 import de.do9fse.cwterminal.core.model.commands.CalibrateCommand;
@@ -25,12 +29,15 @@ import de.do9fse.cwterminal.core.model.commands.SetWK2ModeCommand;
 import de.do9fse.cwterminal.core.model.commands.TextCommand;
 
 public class CommandFactory {
+    private static final Logger LOGGER = LoggerFactory.getLogger(CommandFactory.class);
+
     private static final Charset US_ASCII = StandardCharsets.US_ASCII;
 
     private KeyerVersion version;
 
     public CommandFactory(final KeyerVersion version) {
-        this.version = version;
+        this.version = Objects.requireNonNull(version, "Keyer version must not be null");
+        LOGGER.info("Command factory created to be compatible with WinKey version v{}.x", version.majorVersion());
     }
 
     public byte[] from(final KeyerCommand command) throws OperationNotSupportedException {
