@@ -8,11 +8,12 @@ import org.slf4j.LoggerFactory;
 import com.fazecast.jSerialComm.SerialPort;
 
 import de.do9fse.cwterminal.application.KeyerEventReceiver;
-import de.do9fse.cwterminal.application.KeyerUseCase;
-import de.do9fse.cwterminal.core.model.KeyerCommand.OpenHostCommand;
 import de.do9fse.cwterminal.core.model.KeyerSession;
-import de.do9fse.cwterminal.core.port.out.SessionRepository;
-import de.do9fse.cwterminal.infrastructure.persistence.inmemory.InMemorySessionRepository;
+import de.do9fse.cwterminal.core.model.KeyerVersion;
+import de.do9fse.cwterminal.core.model.commands.HostOpenCommand;
+import de.do9fse.cwterminal.core.port.out.ApplicationContext;
+import de.do9fse.cwterminal.infrastructure.persistence.inmemory.InMemoryApplicationContext;
+import de.do9fse.cwterminal.infrastructure.winkey.CommandFactory;
 import de.do9fse.cwterminal.infrastructure.winkey.KeyerCommandQueue;
 import de.do9fse.cwterminal.infrastructure.winkey.WinKeyReceiverThread;
 import de.do9fse.cwterminal.infrastructure.winkey.WinKeySenderAdapter;
@@ -27,10 +28,11 @@ public final class Main {
     private String portName;
     private SerialPort port;
 
+    private ApplicationContext context;
+
     private SerialTransport transport;
     private WinKeyReceiverThread receiver;
 
-    private KeyerCommandQueue queue;
     private WinKeySenderAdapter adapter;
 
     public static void main(final String[] args) throws Exception {
@@ -101,23 +103,30 @@ public final class Main {
     }
 
     private void createDependencies() {
-        this.queue = new KeyerCommandQueue();
+        final KeyerVersion initialVersion = new KeyerVersion(1, 0);
+
+        final CommandFactory factory = new CommandFactory(initialVersion);
+        final KeyerCommandQueue queue = new KeyerCommandQueue();
+        final KeyerSession session = new KeyerSession();
+
+        this.context = new InMemoryApplicationContext(factory, queue, session);
     }
 
     private void createReceiver() {
-        final SessionRepository repository = new InMemorySessionRepository();
-        
-        final KeyerSession session = repository.loadSession();
-        final OpenHostCommand command = new OpenHostCommand();
+        final KeyerSession session = context.getSession();
+
+        // Set session to pending state
+        final HostOpenCommand command = new HostOpenCommand();
         session.handleCommand(command);
 
-        final KeyerEventReceiver receiver = new KeyerEventReceiver(repository);
+        final KeyerEventReceiver receiver = new KeyerEventReceiver(context);
 
-        this.receiver = new WinKeyReceiverThread(this.transport, this.queue, receiver);
+        final KeyerCommandQueue queue = context.getQueue();
+        this.receiver = new WinKeyReceiverThread(this.transport, queue, receiver);
         this.receiver.start();
     }
 
     private void createSender() {
-        this.adapter = new WinKeySenderAdapter(this.transport, this.queue);
+        this.adapter = new WinKeySenderAdapter(this.context, this.transport);
     }
 }

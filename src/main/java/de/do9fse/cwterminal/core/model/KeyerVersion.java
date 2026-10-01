@@ -30,6 +30,6 @@ public record KeyerVersion(int majorVersion, int minorVersion) {
 
     @Override
     public String toString() {
-        return "\"" + "v" + majorVersion + "." + minorVersion + "\"";
+        return "v" + majorVersion + "." + minorVersion;
     }
 }

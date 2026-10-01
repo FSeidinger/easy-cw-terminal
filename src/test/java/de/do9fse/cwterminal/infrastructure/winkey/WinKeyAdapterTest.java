@@ -7,7 +7,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
-import java.io.IOException;
 import java.util.concurrent.TimeoutException;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -19,7 +18,11 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import de.do9fse.cwterminal.core.model.KeyerCommand;
+import de.do9fse.cwterminal.core.model.KeyerSession;
+import de.do9fse.cwterminal.core.model.KeyerVersion;
+import de.do9fse.cwterminal.core.model.commands.HostOpenCommand;
+import de.do9fse.cwterminal.core.port.out.ApplicationContext;
+import de.do9fse.cwterminal.infrastructure.persistence.inmemory.InMemoryApplicationContext;
 
 @DisplayName("WinKey adapter tests")
 @ExtendWith(MockitoExtension.class)
@@ -30,11 +33,19 @@ class WinKeyAdapterTest {
     @Mock
     private KeyerCommandQueue queue;
 
+    private ApplicationContext context;
+
     private WinKeySenderAdapter adapter;
 
     @BeforeEach
     void setUp() {
-        this.adapter = new WinKeySenderAdapter(transport, queue);
+        final KeyerVersion version = new KeyerVersion(1, 0);
+        final CommandFactory factory = new CommandFactory(version);
+        final KeyerSession session = new KeyerSession();
+
+        this.context = new InMemoryApplicationContext(factory, queue, session);
+
+        this.adapter = new WinKeySenderAdapter(this.context, transport);
     }
 
     @Test
@@ -46,18 +57,18 @@ class WinKeyAdapterTest {
     }
 
     @Test
-    @DisplayName("Test that the adapter rejects invalid transport")
+    @DisplayName("Test that the adapter rejects invalid context")
     void rejectsInvalidTransport() {
-        final Exception exception = assertThrows(NullPointerException.class, () -> new WinKeySenderAdapter(null, queue));
-        assertEquals("Transport must not be null",exception.getMessage());
+        final Exception exception = assertThrows(NullPointerException.class, () -> new WinKeySenderAdapter(null, transport));
+        assertEquals("Application context must not be null",exception.getMessage());
         verifyNoInteractions(transport);
     }
 
     @Test
     @DisplayName("Test that the adapter rejects invalid command queue")
     void rejectsInvalidQueue() {
-        final Exception exception = assertThrows(NullPointerException.class, () -> new WinKeySenderAdapter(transport, null));
-        assertEquals("Keyer command queue must not be null",exception.getMessage());
+        final Exception exception = assertThrows(NullPointerException.class, () -> new WinKeySenderAdapter(context, null));
+        assertEquals("Byte transport must not be null",exception.getMessage());
         verifyNoInteractions(transport);
     }
 
@@ -70,7 +81,7 @@ class WinKeyAdapterTest {
 
         thenKeyerDeviceIsInitializedOnce();
 
-        andCommandIsQueued(new KeyerCommand.OpenHostCommand());
+        andCommandIsQueued(new HostOpenCommand());
     }
 
     @Test
@@ -82,7 +93,7 @@ class WinKeyAdapterTest {
 
         thenKeyerDeviceIsInitializedTwice();
 
-        andCommandIsQueued(new KeyerCommand.OpenHostCommand());
+        andCommandIsQueued(new HostOpenCommand());
     }
 
     @Test
@@ -95,12 +106,13 @@ class WinKeyAdapterTest {
 
     @Test
     @DisplayName("Test that the adapter can send an OpenHostCommand")
-    void canSendCommand() throws IOException {
-        final KeyerCommand command = new KeyerCommand.OpenHostCommand();
+    void canSendCommand() throws Exception {
+        final HostOpenCommand command = new HostOpenCommand();
 
         adapter.sendCommand(command);
 
-        final byte[] openHostBuffer = CommandFactory.from(new KeyerCommand.OpenHostCommand());
+        final CommandFactory factory = context.getFactory();
+        final byte[] openHostBuffer = factory.from(command);
         final InOrder verifications = Mockito.inOrder(queue, transport);
         verifications.verify(queue).beginSendTransaction();
         verifications.verify(transport).send(openHostBuffer);
@@ -126,7 +138,8 @@ class WinKeyAdapterTest {
     }
 
     private InOrder thenKeyerDeviceIsInitializedOnce() throws Exception {
-        final byte[] openHostBuffer = CommandFactory.from(new KeyerCommand.OpenHostCommand());
+        final CommandFactory factory = context.getFactory();
+        final byte[] openHostBuffer = factory.from(new HostOpenCommand());
         final InOrder verifications = Mockito.inOrder(transport);
         verifications.verify(transport).discardInput();
         verifications.verify(transport).send(openHostBuffer);
@@ -136,7 +149,8 @@ class WinKeyAdapterTest {
     }
 
     private InOrder thenKeyerDeviceIsInitializedTwice() throws Exception {
-        final byte[] openHostBuffer = CommandFactory.from(new KeyerCommand.OpenHostCommand());
+        final CommandFactory factory = context.getFactory();
+        final byte[] openHostBuffer = factory.from(new HostOpenCommand());
         final InOrder verifications = Mockito.inOrder(transport);
         
         verifications.verify(transport).discardInput();
@@ -151,7 +165,7 @@ class WinKeyAdapterTest {
         assertEquals("Keyer did not respond to Open Host command within 5 seconds.", exception.getMessage());
     }
 
-    private void andCommandIsQueued(final KeyerCommand command) {
+    private void andCommandIsQueued(final HostOpenCommand command) {
         verify(queue).offer(command);
     }
 }

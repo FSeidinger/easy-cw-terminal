@@ -3,8 +3,8 @@ package de.do9fse.cwterminal.core.model;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import de.do9fse.cwterminal.core.model.KeyerCommand.OpenHostCommand;
 import de.do9fse.cwterminal.core.model.KeyerEvent.HostOpenedEvent;
+import de.do9fse.cwterminal.core.model.commands.HostOpenCommand;
 
 /**
  * The keyer session holds the state of the keyer device and its version
@@ -12,19 +12,7 @@ import de.do9fse.cwterminal.core.model.KeyerEvent.HostOpenedEvent;
  * <p>
  * The session is assumed to be closed after creation.
  * <p>
- *
- * <p>
- * Before opening the keyer device we do not know the version number of the
- * device and therefore the protocol version to use. We assume version 1.0 after
- * creation.
- * </p>
- *
- * <p>
- * When opening the device it will tell us its actual version number and we will
- * store that as information and to select the protocol version, which is tied
- * to the major number.
- * </p>
- */
+ * */
 public class KeyerSession {
     private static final Logger LOGGER = LoggerFactory.getLogger(KeyerSession.class);
 
@@ -35,11 +23,9 @@ public class KeyerSession {
     } 
 
     private SessionState state;
-    private KeyerVersion version;
 
     public KeyerSession() {
         this.state = SessionState.CLOSED;
-        this.version = new KeyerVersion(1, 0);
 
         LOGGER.info("Session created");
     }
@@ -48,11 +34,7 @@ public class KeyerSession {
         return this.state;
     }
 
-    public KeyerVersion getVersion() {
-        return this.version;
-    }
-
-    public void handleCommand(final OpenHostCommand command) {
+    public void handleCommand(final HostOpenCommand command) {
         if (state != SessionState.CLOSED) {
             throw new IllegalStateException("Session already started");
         }
@@ -65,16 +47,15 @@ public class KeyerSession {
     public void on(final HostOpenedEvent event) {
         if (state != SessionState.PENDING) {
             throw new IllegalStateException("Session is not pending");
-            
-        }
-        LOGGER.info("Received event: {}", event);
 
-        this.version = event.version();
+        }
+        
+        LOGGER.info("Received event: {}", event);       
         this.state = SessionState.OPEN;
     }
 
     @Override
     public String toString() {
-        return "KeyerSession [state=" + state + ", version=" + version + "]";
+        return "KeyerSession [state=" + state + "]";
     }
 }

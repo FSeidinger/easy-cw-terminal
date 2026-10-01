@@ -6,7 +6,7 @@ import java.util.Deque;
 import java.util.Iterator;
 import java.util.concurrent.locks.ReentrantLock;
 
-import de.do9fse.cwterminal.core.model.KeyerCommand;
+import de.do9fse.cwterminal.core.model.commands.KeyerCommand;
 
 public class KeyerCommandQueue extends AbstractQueue<KeyerCommand> {
     private final ReentrantLock lock;

@@ -6,9 +6,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import de.do9fse.cwterminal.core.model.KeyerCommand.OpenHostCommand;
 import de.do9fse.cwterminal.core.model.KeyerEvent.HostOpenedEvent;
 import de.do9fse.cwterminal.core.model.KeyerSession.SessionState;
+import de.do9fse.cwterminal.core.model.commands.HostOpenCommand;
 
 @DisplayName("Keyer session tests")
 class KeyerSessionTest {
@@ -51,13 +51,13 @@ class KeyerSessionTest {
 
     void givenTheSessionIsPending() {
         this.session = new KeyerSession();
-        final OpenHostCommand command = new OpenHostCommand();
+        final HostOpenCommand command = new HostOpenCommand();
         session.handleCommand(command);      
     }
 
     void givenTheSessionIsOpen() {
         this.session = new KeyerSession();
-        final OpenHostCommand command = new OpenHostCommand();
+        final HostOpenCommand command = new HostOpenCommand();
         session.handleCommand(command);      
 
         final KeyerVersion version = new KeyerVersion(2, 1);
@@ -66,18 +66,15 @@ class KeyerSessionTest {
     }
 
     void whenSendingOpenHostCommand() {
-        final OpenHostCommand command = new OpenHostCommand();
+        final HostOpenCommand command = new HostOpenCommand();
         session.handleCommand(command);      
     }
 
     void thenSessionIsClosed() {
         assertEquals(SessionState.CLOSED, session.getSessionState());
-        assertEquals(1, session.getVersion().majorVersion());
-        assertEquals(0, session.getVersion().minorVersion());
     }
 
     void thenSessionIsPending() {
         assertEquals(SessionState.PENDING, session.getSessionState());
-        assertEquals(new KeyerVersion(1, 0), session.getVersion());
     }
 }

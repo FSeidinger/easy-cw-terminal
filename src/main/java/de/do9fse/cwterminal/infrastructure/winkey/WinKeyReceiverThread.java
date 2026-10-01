@@ -11,8 +11,9 @@ import org.slf4j.LoggerFactory;
 
 import com.fazecast.jSerialComm.SerialPortTimeoutException;
 
-import de.do9fse.cwterminal.core.model.KeyerCommand;
 import de.do9fse.cwterminal.core.model.KeyerEvent.HostOpenedEvent;
+import de.do9fse.cwterminal.core.model.commands.AdminCommand;
+import de.do9fse.cwterminal.core.model.commands.KeyerCommand;
 import de.do9fse.cwterminal.core.model.KeyerVersion;
 import de.do9fse.cwterminal.core.port.out.WinKeyReceiver;
 
@@ -119,7 +120,7 @@ public class WinKeyReceiverThread {
         }
 
         switch (command) {
-            case KeyerCommand.OpenHostCommand openHostCommand -> {
+            case AdminCommand openHostCommand -> {
                 final int majorVersion = receivedByte / 10;
                 final int minorVersion = receivedByte % 10;
                 final KeyerVersion version = new KeyerVersion(majorVersion, minorVersion);

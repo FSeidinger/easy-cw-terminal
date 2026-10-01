@@ -38,6 +38,6 @@ class KeyerVersionTest {
 
         assertEquals(2, version.majorVersion());
         assertEquals(1, version.minorVersion());
-        assertEquals("2.1", version.toString());
+        assertEquals("v2.1", version.toString());
     }
 }

@@ -1,7 +1,7 @@
 package de.do9fse.cwterminal.core.port.in;
 
-import de.do9fse.cwterminal.core.model.KeyerCommand.OpenHostCommand;
+import de.do9fse.cwterminal.core.model.commands.HostOpenCommand;
 
 public interface KeyerService {
-    void handleHostOpenCommand(final OpenHostCommand command) throws Exception;
+    void handleCommand(final HostOpenCommand command) throws Exception;
 }
