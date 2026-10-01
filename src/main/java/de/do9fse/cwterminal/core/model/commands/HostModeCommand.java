@@ -1,24 +1,11 @@
 package de.do9fse.cwterminal.core.model.commands;
 
-public abstract sealed class AdminCommand implements KeyerCommand
+public abstract sealed class HostModeCommand implements KeyerCommand
 permits
-    CalibrateCommand,
-    ResetCommand,
-    HostOpenCommand,
-    HostCloseCommand,
-    EchoTestCommand,
-    ReadPaddleADCommand,
-    ReadSpeedA2DCommand,
-    GetValuesCommand,
-    ReservedCommand,
-    GetCalibrationValueCommand,
-    SetWK1ModeCommand,
-    SetWK2ModeCommand,
-    DumpEEPROMCommand,
-    LoadEEPROMCommand,
-    SendStandaloneMessageCommand
-{   
-    @Override
+    SideToneFrequencyCommand,
+    SideToneControlCommand
+{
+   @Override
     public String toString() {
         return getClass().getSimpleName()
         + "["
@@ -42,5 +29,5 @@ permits
     @Override
     public int hashCode() {
         return getClass().hashCode();
-    }
+    }    
 }

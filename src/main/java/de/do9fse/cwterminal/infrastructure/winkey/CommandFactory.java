@@ -26,6 +26,8 @@ import de.do9fse.cwterminal.core.model.commands.ResetCommand;
 import de.do9fse.cwterminal.core.model.commands.SendStandaloneMessageCommand;
 import de.do9fse.cwterminal.core.model.commands.SetWK1ModeCommand;
 import de.do9fse.cwterminal.core.model.commands.SetWK2ModeCommand;
+import de.do9fse.cwterminal.core.model.commands.SideToneControlCommand;
+import de.do9fse.cwterminal.core.model.commands.SideToneFrequencyCommand;
 import de.do9fse.cwterminal.core.model.commands.TextCommand;
 
 public class CommandFactory {
@@ -55,7 +57,7 @@ public class CommandFactory {
 
         return switch (command) {
             // Admin commands
-            case CalibrateCommand c ->              new byte[] { 0x00, 0x00, (byte) c.getCalibrationValue() };
+            case CalibrateCommand c ->              new byte[] { 0x00, 0x00, (byte) 0xFF };
             case ResetCommand c ->                  new byte[] { 0x00, 0x01 };
             case HostOpenCommand c ->               new byte[] { 0x00, 0x02 };
             case HostCloseCommand c ->              new byte[] { 0x00, 0x03 };
@@ -65,6 +67,9 @@ public class CommandFactory {
             case GetValuesCommand c ->              new byte[] { 0x00, 0x07 };
             case ReservedCommand c ->               new byte[] { 0x00, 0x08 };
             case GetCalibrationValueCommand c ->    new byte[] { 0x00, 0x09 };
+
+            // Host mode commands
+            case SideToneFrequencyCommand c ->      new byte[] { 0x01, fromSideToneFrequencyCommand(c) };
 
             case TextCommand c -> c.text().getBytes();
             default ->  throw new IllegalArgumentException("Unsupported command type: " + command.getClass().getName());
@@ -84,12 +89,14 @@ public class CommandFactory {
             case EchoTestCommand c ->               new byte[] { 0x00, 0x04, (byte) c.getEchoChar() };
             case GetValuesCommand c ->              new byte[] { 0x00, 0x07 };
             case ReservedCommand c ->               new byte[] { 0x00, 0x08 };
-            case GetCalibrationValueCommand c ->    new byte[] { 0x00, 0x09 };
             case SetWK1ModeCommand c ->             new byte[] { 0x00, 0x0A };
             case SetWK2ModeCommand c ->             new byte[] { 0x00, 0x0B };
             case DumpEEPROMCommand c ->             new byte[] { 0x00, 0x0C };
             case LoadEEPROMCommand c ->             new byte[] { 0x00, 0x0D };
             case SendStandaloneMessageCommand c ->  new byte[] { 0x00, 0x0E, (byte) c.getMessageId() };
+
+            // Host mode commands
+            case SideToneControlCommand c ->        new byte[] { 0x01, fromSideToneControlCommand(c) };
 
             case TextCommand c -> c.text().getBytes(US_ASCII);
 
@@ -104,6 +111,8 @@ public class CommandFactory {
             case DumpEEPROMCommand c -> true;
             case LoadEEPROMCommand c -> true;
             case SendStandaloneMessageCommand c -> true;
+            case SideToneControlCommand c -> true;
+
             default -> false;
         };
     }
@@ -113,7 +122,28 @@ public class CommandFactory {
             case CalibrateCommand c -> true;
             case ReadPaddleADCommand c -> true;
             case ReadSpeedA2DCommand c -> true;
+            case SideToneFrequencyCommand c -> true;
+
             default -> false;
         };
+    }
+
+    private byte fromSideToneFrequencyCommand(final SideToneFrequencyCommand command) {
+        final int stf = command.getSideToneFrequency().ordinal();
+        return (byte) (stf + 1);
+    }
+    
+    private byte fromSideToneControlCommand(final SideToneControlCommand command) {
+        int value = 0;
+
+        // Calculate the side tone frequency from enum ordinal stored in bits 0-3
+        value |= command.getSideToneFrequency().ordinal() + 1;
+
+        // If paddle sidetone only is enabled, set bit 7
+        if (command.isEnablePaddleSidetoneOnly()) {
+            value |= 0x80;
+        }
+
+        return (byte) value;
     }
 }

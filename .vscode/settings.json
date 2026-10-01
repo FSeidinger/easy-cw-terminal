@@ -11,10 +11,12 @@
     "cSpell.words": [
         "CWTerminal",
         "Keyer",
+        "Sidetone",
         "WinKey",
         "Winkeyer"
     ],
 
     "java.configuration.updateBuildConfiguration": "interactive",
-    "java.codeGeneration.addFinalForNewDeclaration": "all"
+    "java.codeGeneration.addFinalForNewDeclaration": "all",
+    "java.jdt.ls.vmargs": "-XX:+UseG1GC -XX:+UseStringDeduplication -Xmx4G -Xms1G"
 }

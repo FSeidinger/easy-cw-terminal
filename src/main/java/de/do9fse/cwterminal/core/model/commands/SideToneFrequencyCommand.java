@@ -1,0 +1,33 @@
+package de.do9fse.cwterminal.core.model.commands;
+
+import java.util.Objects;
+
+public final class SideToneFrequencyCommand extends HostModeCommand {
+    public enum SideToneFrequency {
+        FREQUENCY_3759_HZ,
+        FREQUENCY_1879_HZ,
+        FREQUENCY_1252_HZ,
+        FREQUENCY_940_HZ,
+        FREQUENCY_752_HZ,
+        FREQUENCY_625_HZ,
+        FREQUENCY_535_HZ,
+        FREQUENCY_469_HZ,
+        FREQUENCY_417_HZ,
+        FREQUENCY_375_HZ
+    }
+
+    private final SideToneFrequency sideToneFrequency;
+
+    public SideToneFrequencyCommand(final SideToneFrequency sideToneFrequency) {
+        this.sideToneFrequency = Objects.requireNonNull(sideToneFrequency, "sideToneFrequency must not be null");
+    }
+
+    public SideToneFrequency getSideToneFrequency() {
+        return sideToneFrequency;
+    }
+
+    @Override
+    protected String stringifyFields() {
+        return "sideToneFrequency=" + sideToneFrequency;
+    }
+}
