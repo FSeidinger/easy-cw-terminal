@@ -2,8 +2,8 @@ package de.do9fse.cwterminal.core.model;
 
 import java.util.Objects;
 
-public record KeyerVersion(int majorVersion, int minorVersion) {
-    public KeyerVersion {
+public record WinKeyerVersion(int majorVersion, int minorVersion) {
+    public WinKeyerVersion {
         if (majorVersion < 1 || majorVersion > 3) {
             throw new IllegalArgumentException("Unsupported WinKey major version: " + majorVersion);
         }
@@ -13,7 +13,7 @@ public record KeyerVersion(int majorVersion, int minorVersion) {
         }
     }
 
-    public static KeyerVersion parse(final String version) {
+    public static WinKeyerVersion parse(final String version) {
         Objects.requireNonNull(version, "Version must not be null");
 
         final String[] parts = version.split("\\.", 2);
@@ -22,14 +22,9 @@ public record KeyerVersion(int majorVersion, int minorVersion) {
         }
 
         try {
-            return new KeyerVersion(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]));
+            return new WinKeyerVersion(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]));
         } catch (final NumberFormatException exception) {
             throw new IllegalArgumentException("Version must use the notation x.y: " + version, exception);
         }
-    }
-
-    @Override
-    public String toString() {
-        return "v" + majorVersion + "." + minorVersion;
     }
 }
