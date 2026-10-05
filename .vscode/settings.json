@@ -1,6 +1,7 @@
 {
     "cSpell.ignoreWords": [
         "EEPROM",
+        "classgraph",
         "fazecast",
         "inmemory",
         "logback",
@@ -18,5 +19,7 @@
 
     "java.configuration.updateBuildConfiguration": "interactive",
     "java.codeGeneration.addFinalForNewDeclaration": "all",
-    "java.jdt.ls.vmargs": "-XX:+UseG1GC -XX:+UseStringDeduplication -Xmx4G -Xms1G"
+    "java.jdt.ls.vmargs": "-XX:+UseG1GC -XX:+UseStringDeduplication -Xmx4G -Xms1G",
+    "java.project.explorer.showNonJavaResources": false,
+    "java.dependency.packagePresentation": "hierarchical"
 }
