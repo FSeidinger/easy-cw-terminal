@@ -9,40 +9,40 @@ import javax.naming.OperationNotSupportedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import de.do9fse.cwterminal.core.model.KeyerVersion;
-import de.do9fse.cwterminal.core.model.commands.CalibrateCommand;
-import de.do9fse.cwterminal.core.model.commands.DumpEEPROMCommand;
-import de.do9fse.cwterminal.core.model.commands.EchoTestCommand;
-import de.do9fse.cwterminal.core.model.commands.GetCalibrationValueCommand;
-import de.do9fse.cwterminal.core.model.commands.GetValuesCommand;
-import de.do9fse.cwterminal.core.model.commands.HostCloseCommand;
-import de.do9fse.cwterminal.core.model.commands.HostOpenCommand;
-import de.do9fse.cwterminal.core.model.commands.KeyerCommand;
-import de.do9fse.cwterminal.core.model.commands.LoadEEPROMCommand;
-import de.do9fse.cwterminal.core.model.commands.ReadPaddleADCommand;
-import de.do9fse.cwterminal.core.model.commands.ReadSpeedA2DCommand;
-import de.do9fse.cwterminal.core.model.commands.ReservedCommand;
-import de.do9fse.cwterminal.core.model.commands.ResetCommand;
-import de.do9fse.cwterminal.core.model.commands.SendStandaloneMessageCommand;
-import de.do9fse.cwterminal.core.model.commands.SetWK1ModeCommand;
-import de.do9fse.cwterminal.core.model.commands.SetWK2ModeCommand;
-import de.do9fse.cwterminal.core.model.commands.SideToneControlCommand;
-import de.do9fse.cwterminal.core.model.commands.SideToneFrequencyCommand;
-import de.do9fse.cwterminal.core.model.commands.TextCommand;
+import de.do9fse.cwterminal.core.model.WinKeyVersion;
+import de.do9fse.cwterminal.core.model.commands.WinKeyCommand;
+import de.do9fse.cwterminal.core.model.commands.admin.CalibrateCommand;
+import de.do9fse.cwterminal.core.model.commands.admin.DumpEEPROMCommand;
+import de.do9fse.cwterminal.core.model.commands.admin.EchoTestCommand;
+import de.do9fse.cwterminal.core.model.commands.admin.GetCalibrationValueCommand;
+import de.do9fse.cwterminal.core.model.commands.admin.GetValuesCommand;
+import de.do9fse.cwterminal.core.model.commands.admin.HostCloseCommand;
+import de.do9fse.cwterminal.core.model.commands.admin.HostOpenCommand;
+import de.do9fse.cwterminal.core.model.commands.admin.LoadEEPROMCommand;
+import de.do9fse.cwterminal.core.model.commands.admin.ReadPaddleADCommand;
+import de.do9fse.cwterminal.core.model.commands.admin.ReadSpeedA2DCommand;
+import de.do9fse.cwterminal.core.model.commands.admin.ReservedCommand;
+import de.do9fse.cwterminal.core.model.commands.admin.ResetCommand;
+import de.do9fse.cwterminal.core.model.commands.admin.SendStandaloneMessageCommand;
+import de.do9fse.cwterminal.core.model.commands.admin.SetWK1ModeCommand;
+import de.do9fse.cwterminal.core.model.commands.admin.SetWK2ModeCommand;
+import de.do9fse.cwterminal.core.model.commands.host.SideToneControlCommand;
+import de.do9fse.cwterminal.core.model.commands.host.SideToneFrequencyCommand;
+import de.do9fse.cwterminal.core.model.commands.other.TextCommand;
 
 public class CommandFactory {
     private static final Logger LOGGER = LoggerFactory.getLogger(CommandFactory.class);
 
     private static final Charset US_ASCII = StandardCharsets.US_ASCII;
 
-    private KeyerVersion version;
+    private WinKeyVersion version;
 
-    public CommandFactory(final KeyerVersion version) {
+    public CommandFactory(final WinKeyVersion version) {
         this.version = Objects.requireNonNull(version, "Keyer version must not be null");
         LOGGER.info("Command factory created to be compatible with WinKey version v{}.x", version.majorVersion());
     }
 
-    public byte[] from(final KeyerCommand command) throws OperationNotSupportedException {
+    public byte[] from(final WinKeyCommand command) throws OperationNotSupportedException {
         switch (version.majorVersion()) {
             case 1: return fromV1(command);
             case 2: return fromV2(command);
@@ -50,7 +50,7 @@ public class CommandFactory {
         }
     }
 
-    private byte[] fromV1(final KeyerCommand command) {
+    private byte[] fromV1(final WinKeyCommand command) {
         if (isNotSupportedInV1(command)) {
             throw new IllegalArgumentException("Command " + command.getClass().getName() + " is not supported in V1");
         }
@@ -61,7 +61,7 @@ public class CommandFactory {
             case ResetCommand c ->                  new byte[] { 0x00, 0x01 };
             case HostOpenCommand c ->               new byte[] { 0x00, 0x02 };
             case HostCloseCommand c ->              new byte[] { 0x00, 0x03 };
-            case EchoTestCommand c ->               new byte[] { 0x00, 0x04, (byte) c.getEchoChar() };
+            case EchoTestCommand c ->               new byte[] { 0x00, 0x04, (byte) c.echoChar() };
             case ReadPaddleADCommand c ->           new byte[] { 0x00, 0x05 };
             case ReadSpeedA2DCommand c ->           new byte[] { 0x00, 0x06 };
             case GetValuesCommand c ->              new byte[] { 0x00, 0x07 };
@@ -76,7 +76,7 @@ public class CommandFactory {
         };
     }
 
-    private byte[] fromV2(final KeyerCommand command) {
+    private byte[] fromV2(final WinKeyCommand command) {
         if (isNotSupportedInV2(command)) {
             throw new IllegalArgumentException("Command " + command.getClass().getName() + " is not supported in V2");
         }
@@ -86,14 +86,14 @@ public class CommandFactory {
             case ResetCommand c ->                  new byte[] { 0x00, 0x01 };
             case HostOpenCommand c ->               new byte[] { 0x00, 0x02 };
             case HostCloseCommand c ->              new byte[] { 0x00, 0x03 };
-            case EchoTestCommand c ->               new byte[] { 0x00, 0x04, (byte) c.getEchoChar() };
+            case EchoTestCommand c ->               new byte[] { 0x00, 0x04, (byte) c.echoChar() };
             case GetValuesCommand c ->              new byte[] { 0x00, 0x07 };
             case ReservedCommand c ->               new byte[] { 0x00, 0x08 };
             case SetWK1ModeCommand c ->             new byte[] { 0x00, 0x0A };
             case SetWK2ModeCommand c ->             new byte[] { 0x00, 0x0B };
             case DumpEEPROMCommand c ->             new byte[] { 0x00, 0x0C };
             case LoadEEPROMCommand c ->             new byte[] { 0x00, 0x0D };
-            case SendStandaloneMessageCommand c ->  new byte[] { 0x00, 0x0E, (byte) c.getMessageId() };
+            case SendStandaloneMessageCommand c ->  new byte[] { 0x00, 0x0E, (byte) c.messageId() };
 
             // Host mode commands
             case SideToneControlCommand c ->        new byte[] { 0x01, fromSideToneControlCommand(c) };
@@ -104,7 +104,7 @@ public class CommandFactory {
         };
     }
 
-    private boolean isNotSupportedInV1(final KeyerCommand command) {
+    private boolean isNotSupportedInV1(final WinKeyCommand command) {
         return switch (command) {
             case SetWK1ModeCommand c -> true;
             case SetWK2ModeCommand c -> true;
@@ -117,7 +117,7 @@ public class CommandFactory {
         };
     }
 
-    private boolean isNotSupportedInV2(final KeyerCommand command) {
+    private boolean isNotSupportedInV2(final WinKeyCommand command) {
         return switch (command) {
             case CalibrateCommand c -> true;
             case ReadPaddleADCommand c -> true;
@@ -129,7 +129,7 @@ public class CommandFactory {
     }
 
     private byte fromSideToneFrequencyCommand(final SideToneFrequencyCommand command) {
-        final int stf = command.getSideToneFrequency().ordinal();
+        final int stf = command.sideToneFrequency().ordinal();
         return (byte) (stf + 1);
     }
     
@@ -137,10 +137,10 @@ public class CommandFactory {
         int value = 0;
 
         // Calculate the side tone frequency from enum ordinal stored in bits 0-3
-        value |= command.getSideToneFrequency().ordinal() + 1;
+        value |= command.sideToneFrequency().ordinal() + 1;
 
         // If paddle sidetone only is enabled, set bit 7
-        if (command.isEnablePaddleSidetoneOnly()) {
+        if (command.enablePaddleSideToneOnly()) {
             value |= 0x80;
         }
 
