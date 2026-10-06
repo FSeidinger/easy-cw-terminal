@@ -13,7 +13,39 @@ import de.do9fse.cwterminal.core.model.error.WinKeyRuntimeException;
 import io.github.classgraph.ClassGraph;
 import io.github.classgraph.ScanResult;
 
+/**
+ * The base interface for all WinKey Commands
+ *
+ * <p>
+ * The WinKey commands are grouped into Admin, Host and Other commands. For each
+ * of this groups there is an interface extending this base interface.
+ * <p>
+ *
+ * <p>
+ * A command itself is a Java record implementing its group interface.
+ * </p>
+ *
+ * <p>
+ * A valid command is expected to have a valid
+ * {@link de.do9fse.cwterminal.core.model.commands.CommandConfiguration CommandConfiguration}
+ * annotation.
+ * </p>
+ *
+ * @param <R> The type of response expected for this command or
+ *     {@link de.do9fse.cwterminal.core.model.responses.EmptyResponse EmptyResponse} if no response is expected.
+ */
 public interface WinKeyCommand<R> {
+    /**
+     * Returns the command info of this command
+     *
+     * <p>
+     * The command info is read from the
+     * {@link de.do9fse.cwterminal.core.model.commands.CommandConfiguration CommandConfiguration}
+     * annotation. 
+     * </p>
+     *
+     * @return The command info of this command
+     */
     default CommandInfo<R> getCommandInfo() {
         @SuppressWarnings("unchecked")
         final Class<WinKeyCommand<R>> commandClass = (Class<WinKeyCommand<R>>) getClass();
@@ -32,10 +64,53 @@ public interface WinKeyCommand<R> {
         return new CommandInfo<>(commandClass, responseClass, supportedKeyProtocolVersions);
     }
 
-    @SuppressWarnings("rawtypes")
-    static List<Class<WinKeyCommand>> validateCommands(final String basePackage) {
-        final List<Class<WinKeyCommand>> validCommandClasses = new ArrayList<>();
-        final List<Class<WinKeyCommand>> invalidCommandClasses = new ArrayList<>();
+    /**
+     * The payload bytes used to transmit via WinKey Protocol to the WinKey
+     * device
+     *
+     * <p>
+     * Command implementations are expected to override this method to deliver
+     * the payload bytes.
+     * <P>
+     * 
+     * <P>
+     * In the case of grouped commands, e.g.
+     * {@link de.do9fse.cwterminal.core.model.commands.admin.AdminCommand AdminCommand},
+     * the {@link #getPayloadBytes()} method only delivers the admin prefix
+     * byte. In this example the byte 0x00.
+     *
+     * @return The payload bytes of this command
+     */
+    byte[] getPayloadBytes();
+
+    /**
+     * The fully assembled payload
+     *
+     * @return Fully assembled payload
+     */
+    default byte[] toProtocolBytes() {
+        return getPayloadBytes();
+    }
+
+    /**
+     * Scans for commands
+     *
+     * <p>
+     * This method can be used when starting an application using this library.
+     * It scans all commands found in the given basePackage and its sub
+     * packages. For each found command it checks if the command is valid, i.e.
+     * that the command is annotated with the
+     * {@link de.do9fse.cwterminal.core.model.commands.CommandConfiguration CommandConfiguration}
+     * annotation.
+     * </p>
+     *
+     * @param basePackage The base package to scan for commands
+     * @return A list of valid commands found in the base package and its sub packages.
+     * @throws WinKeyRuntimeException If at least one invalid command was found
+     */
+    static List<Class<WinKeyCommand<?>>> validateCommands(final String basePackage) {
+        final List<Class<WinKeyCommand<?>>> validCommandClasses = new ArrayList<>();
+        final List<Class<WinKeyCommand<?>>> invalidCommandClasses = new ArrayList<>();
 
         // Check all classes found in base package
         try (final ScanResult commandClassCandidates = new ClassGraph()
@@ -44,11 +119,12 @@ public interface WinKeyCommand<R> {
             .scan()
         ) {
             // Filter classes that implement the WinKeyCommand interface
-            final List<Class<WinKeyCommand>> commandClasses = commandClassCandidates
+            @SuppressWarnings("unchecked")
+            final List<Class<WinKeyCommand<?>>> commandClasses = (List<Class<WinKeyCommand<?>>>) (List<?>) commandClassCandidates
                 .getClassesImplementing(WinKeyCommand.class)
                 .loadClasses(WinKeyCommand.class);
 
-            for (final Class<WinKeyCommand> commandClass : commandClasses) {
+            for (final Class<WinKeyCommand<?>> commandClass : commandClasses) {
                 // Ignore abstract WinKeyCommand classes
                 if (isAbstract(commandClass.getModifiers())) {
                     continue;
@@ -75,9 +151,13 @@ public interface WinKeyCommand<R> {
                 .collect(Collectors.joining(", "));
 
             // Raise error, if such a WinKeyCommand implementation is found
-            throw new WinKeyRuntimeException(
-                "Following command classes are missing the @SupportedProtocols annotation: " + unannotatedList
+            final String message = MessageFormat.format(
+                "The following command classes are missing the @{0} annotation: {1}",
+                CommandConfiguration.class.getSimpleName(),
+                unannotatedList
             );
+
+            throw new WinKeyRuntimeException(message);
         }
 
         return validCommandClasses;
