@@ -2,7 +2,7 @@ package de.do9fse.cwterminal.core.model.commands.host;
 
 import java.util.Objects;
 
-public record SideToneControlCommand(boolean enablePaddleSideToneOnly, SideToneFrequency sideToneFrequency) implements HostModeCommand {
+public record SideToneControlCommand(boolean enablePaddleSideToneOnly, SideToneFrequency sideToneFrequency) implements HostModeCommand<SideToneControlCommand> {
     public enum SideToneFrequency {
         FREQUENCY_4000_HZ,
         FREQUENCY_2000_HZ,

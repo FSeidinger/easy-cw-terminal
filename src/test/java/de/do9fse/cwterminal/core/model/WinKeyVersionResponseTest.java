@@ -11,7 +11,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import de.do9fse.cwterminal.core.model.responses.WinKeyVersionResponse;
 
 @DisplayName("Keyer version tests")
-class KeyerVersionTest {
+class WinKeyVersionResponseTest {
 
     @ParameterizedTest
     @ValueSource(ints = { 1, 2, 3 })

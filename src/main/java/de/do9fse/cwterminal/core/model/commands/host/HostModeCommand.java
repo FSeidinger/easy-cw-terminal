@@ -2,4 +2,4 @@ package de.do9fse.cwterminal.core.model.commands.host;
 
 import de.do9fse.cwterminal.core.model.commands.WinKeyCommand;
 
-public interface HostModeCommand extends WinKeyCommand {}
+public interface HostModeCommand<R> extends WinKeyCommand<R> {}

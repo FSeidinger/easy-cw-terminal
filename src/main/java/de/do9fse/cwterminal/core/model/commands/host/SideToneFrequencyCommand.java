@@ -2,7 +2,7 @@ package de.do9fse.cwterminal.core.model.commands.host;
 
 import java.util.Objects;
 
-public record SideToneFrequencyCommand(SideToneFrequency sideToneFrequency) implements HostModeCommand {
+public record SideToneFrequencyCommand(SideToneFrequency sideToneFrequency) implements HostModeCommand<SideToneFrequencyCommand> {
     public enum SideToneFrequency {
         FREQUENCY_3759_HZ,
         FREQUENCY_1879_HZ,

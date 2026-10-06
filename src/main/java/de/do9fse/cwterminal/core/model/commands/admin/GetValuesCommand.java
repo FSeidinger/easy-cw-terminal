@@ -1,3 +1,3 @@
 package de.do9fse.cwterminal.core.model.commands.admin;
 
-public record GetValuesCommand() implements AdminCommand {}
+public record GetValuesCommand() implements AdminCommand<GetValuesCommand> {}
