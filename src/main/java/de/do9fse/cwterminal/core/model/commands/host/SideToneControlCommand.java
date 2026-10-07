@@ -2,6 +2,12 @@ package de.do9fse.cwterminal.core.model.commands.host;
 
 import java.util.Objects;
 
+import de.do9fse.cwterminal.core.model.WinKeyProtocolVersion;
+import de.do9fse.cwterminal.core.model.commands.CommandConfiguration;
+
+@CommandConfiguration(
+    allowedProtocols = WinKeyProtocolVersion.V2
+)
 public record SideToneControlCommand(boolean enablePaddleSideToneOnly, SideToneFrequency sideToneFrequency) implements HostModeCommand {
     public enum SideToneFrequency {
         FREQUENCY_4000_HZ,

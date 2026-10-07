@@ -1,5 +1,13 @@
 package de.do9fse.cwterminal.core.model.commands.admin;
 
+import de.do9fse.cwterminal.core.model.WinKeyProtocolVersion;
+import de.do9fse.cwterminal.core.model.commands.CommandConfiguration;
+import de.do9fse.cwterminal.core.model.responses.DefaultsResponse;
+
+@CommandConfiguration(
+    allowedProtocols = WinKeyProtocolVersion.V2,
+    responseType = DefaultsResponse.class
+)
 public record GetValuesCommand() implements AdminCommand {
     @Override
     public byte[] getPayloadBytes() {

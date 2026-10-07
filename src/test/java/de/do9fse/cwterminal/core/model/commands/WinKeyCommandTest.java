@@ -11,11 +11,35 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import de.do9fse.cwterminal.core.model.WinKeyProtocolVersion;
+import de.do9fse.cwterminal.core.model.commands.admin.CalibrateCommand;
+import de.do9fse.cwterminal.core.model.commands.admin.DumpEEPROMCommand;
+import de.do9fse.cwterminal.core.model.commands.admin.EchoTestCommand;
+import de.do9fse.cwterminal.core.model.commands.admin.GetCalibrationValueCommand;
+import de.do9fse.cwterminal.core.model.commands.admin.GetValuesCommand;
+import de.do9fse.cwterminal.core.model.commands.admin.HostCloseCommand;
+import de.do9fse.cwterminal.core.model.commands.admin.HostOpenCommand;
+import de.do9fse.cwterminal.core.model.commands.admin.LoadEEPROMCommand;
+import de.do9fse.cwterminal.core.model.commands.admin.ReadPaddleA2DCommand;
+import de.do9fse.cwterminal.core.model.commands.admin.ReadSpeedA2DCommand;
+import de.do9fse.cwterminal.core.model.commands.admin.ReservedCommand;
+import de.do9fse.cwterminal.core.model.commands.admin.ResetCommand;
+import de.do9fse.cwterminal.core.model.commands.admin.SendStandaloneMessageCommand;
+import de.do9fse.cwterminal.core.model.commands.admin.SetWK1ModeCommand;
+import de.do9fse.cwterminal.core.model.commands.admin.SetWK2ModeCommand;
+import de.do9fse.cwterminal.core.model.commands.host.SideToneControlCommand;
+import de.do9fse.cwterminal.core.model.commands.host.SideToneControlCommand.SideToneFrequency;
+import de.do9fse.cwterminal.core.model.commands.host.SideToneFrequencyCommand;
+import de.do9fse.cwterminal.core.model.commands.other.TextCommand;
 import de.do9fse.cwterminal.core.model.commands.test.suite3.CommandWithoutAnnotation;
 import de.do9fse.cwterminal.core.model.commands.test.suite5.AdminCommandWithResponse;
 import de.do9fse.cwterminal.core.model.commands.test.suite5.AdminCommandWithoutResponse;
 import de.do9fse.cwterminal.core.model.error.WinKeyRuntimeException;
+import de.do9fse.cwterminal.core.model.responses.CalibrationValueResponse;
+import de.do9fse.cwterminal.core.model.responses.DefaultsResponse;
+import de.do9fse.cwterminal.core.model.responses.EEPROMDumpResponse;
 import de.do9fse.cwterminal.core.model.responses.EmptyResponse;
+import de.do9fse.cwterminal.core.model.responses.PaddleA2DResponse;
+import de.do9fse.cwterminal.core.model.responses.SpeedPotentiometerResponse;
 import de.do9fse.cwterminal.core.model.responses.WinKeyVersionResponse;
 
 public class WinKeyCommandTest {
@@ -74,5 +98,41 @@ public class WinKeyCommandTest {
             Set.of(WinKeyProtocolVersion.V1, WinKeyProtocolVersion.V2, WinKeyProtocolVersion.V3),
             commandWithResponseInfo.allowedProtocolVersions()
         );
+    }
+
+    @Test
+    void productionCommandsDeclareProtocolsAndExpectedResponses() {
+        final List<WinKeyCommand> commands = List.of(
+            new CalibrateCommand(),
+            new ResetCommand(),
+            new HostOpenCommand(),
+            new HostCloseCommand(),
+            new EchoTestCommand('A'),
+            new ReadPaddleA2DCommand(),
+            new ReadSpeedA2DCommand(),
+            new GetValuesCommand(),
+            new ReservedCommand(),
+            new GetCalibrationValueCommand(),
+            new SetWK1ModeCommand(),
+            new SetWK2ModeCommand(),
+            new DumpEEPROMCommand(),
+            new LoadEEPROMCommand(),
+            new SendStandaloneMessageCommand(0),
+            new SideToneControlCommand(false, SideToneFrequency.FREQUENCY_1000_HZ),
+            new SideToneFrequencyCommand(SideToneFrequencyCommand.SideToneFrequency.FREQUENCY_940_HZ),
+            new TextCommand("A")
+        );
+
+        commands.forEach(command -> {
+            final CommandInfo commandInfo = command.getCommandInfo();
+            assertEquals(false, commandInfo.allowedProtocolVersions().isEmpty());
+            assertEquals(command.getClass(), commandInfo.commandClass());
+        });
+
+        assertEquals(DefaultsResponse.class, new GetValuesCommand().getCommandInfo().responseType());
+        assertEquals(PaddleA2DResponse.class, new ReadPaddleA2DCommand().getCommandInfo().responseType());
+        assertEquals(SpeedPotentiometerResponse.class, new ReadSpeedA2DCommand().getCommandInfo().responseType());
+        assertEquals(CalibrationValueResponse.class, new GetCalibrationValueCommand().getCommandInfo().responseType());
+        assertEquals(EEPROMDumpResponse.class, new DumpEEPROMCommand().getCommandInfo().responseType());
     }
 }

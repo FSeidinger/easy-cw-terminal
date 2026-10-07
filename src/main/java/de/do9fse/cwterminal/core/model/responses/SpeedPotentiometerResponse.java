@@ -1,5 +1,8 @@
 package de.do9fse.cwterminal.core.model.responses;
 
-public record SpeedPotentiometerResponse() {
-
+@ResponseConfiguration(expectedResponseBytes = 1)
+public record SpeedPotentiometerResponse(int value) implements WinKeyResponse {
+    public static SpeedPotentiometerResponse parseResponse(final byte[] responseBytes) {
+        return new SpeedPotentiometerResponse(Byte.toUnsignedInt(responseBytes[0]));
+    }
 }
