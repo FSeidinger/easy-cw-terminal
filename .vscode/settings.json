@@ -20,7 +20,7 @@
 
     "java.configuration.updateBuildConfiguration": "interactive",
     "java.codeGeneration.addFinalForNewDeclaration": "all",
-    "java.jdt.ls.vmargs": "-XX:+UseG1GC -XX:+UseStringDeduplication -Xmx4G -Xms1G",
-    "java.project.explorer.showNonJavaResources": false,
+    "java.jdt.ls.vmargs": "-XX:+UseG1GC -XX:+UseStringDeduplication -Xms2G -Xmx8G",
+    "java.project.explorer.showNonJavaResources": true,
     "java.dependency.packagePresentation": "hierarchical"
 }

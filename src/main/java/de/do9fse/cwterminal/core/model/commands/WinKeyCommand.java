@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
 
 import de.do9fse.cwterminal.core.model.WinKeyProtocolVersion;
 import de.do9fse.cwterminal.core.model.error.WinKeyRuntimeException;
+import de.do9fse.cwterminal.core.model.responses.WinKeyResponse;
 import io.github.classgraph.ClassGraph;
 import io.github.classgraph.ScanResult;
 
@@ -34,7 +35,7 @@ import io.github.classgraph.ScanResult;
  * @param <R> The type of response expected for this command or
  *     {@link de.do9fse.cwterminal.core.model.responses.EmptyResponse EmptyResponse} if no response is expected.
  */
-public interface WinKeyCommand<R> {
+public interface WinKeyCommand {
     /**
      * Returns the command info of this command
      *
@@ -46,9 +47,9 @@ public interface WinKeyCommand<R> {
      *
      * @return The command info of this command
      */
-    default CommandInfo<R> getCommandInfo() {
+    default CommandInfo getCommandInfo() {
         @SuppressWarnings("unchecked")
-        final Class<WinKeyCommand<R>> commandClass = (Class<WinKeyCommand<R>>) getClass();
+        final Class<WinKeyCommand> commandClass = (Class<WinKeyCommand>) getClass();
         final String commandName = commandClass.getName();
 
         final CommandConfiguration configuration = commandClass.getAnnotation(CommandConfiguration.class);
@@ -59,9 +60,9 @@ public interface WinKeyCommand<R> {
 
         final Set<WinKeyProtocolVersion> supportedKeyProtocolVersions = Set.of(configuration.allowedProtocols());
         @SuppressWarnings("unchecked")
-        final Class<R> responseClass = (Class<R>) configuration.responseType();
+        final Class<WinKeyResponse> responseClass = (Class<WinKeyResponse>) configuration.responseType();
 
-        return new CommandInfo<>(commandClass, responseClass, supportedKeyProtocolVersions);
+        return new CommandInfo(commandClass, responseClass, supportedKeyProtocolVersions);
     }
 
     /**
@@ -108,9 +109,9 @@ public interface WinKeyCommand<R> {
      * @return A list of valid commands found in the base package and its sub packages.
      * @throws WinKeyRuntimeException If at least one invalid command was found
      */
-    static List<Class<WinKeyCommand<?>>> validateCommands(final String basePackage) {
-        final List<Class<WinKeyCommand<?>>> validCommandClasses = new ArrayList<>();
-        final List<Class<WinKeyCommand<?>>> invalidCommandClasses = new ArrayList<>();
+    static List<Class<WinKeyCommand>> validateCommands(final String basePackage) {
+        final List<Class<WinKeyCommand>> validCommandClasses = new ArrayList<>();
+        final List<Class<WinKeyCommand>> invalidCommandClasses = new ArrayList<>();
 
         // Check all classes found in base package
         try (final ScanResult commandClassCandidates = new ClassGraph()
@@ -119,12 +120,11 @@ public interface WinKeyCommand<R> {
             .scan()
         ) {
             // Filter classes that implement the WinKeyCommand interface
-            @SuppressWarnings("unchecked")
-            final List<Class<WinKeyCommand<?>>> commandClasses = (List<Class<WinKeyCommand<?>>>) (List<?>) commandClassCandidates
+            final List<Class<WinKeyCommand>> commandClasses = commandClassCandidates
                 .getClassesImplementing(WinKeyCommand.class)
                 .loadClasses(WinKeyCommand.class);
 
-            for (final Class<WinKeyCommand<?>> commandClass : commandClasses) {
+            for (final Class<WinKeyCommand> commandClass : commandClasses) {
                 // Ignore abstract WinKeyCommand classes
                 if (isAbstract(commandClass.getModifiers())) {
                     continue;

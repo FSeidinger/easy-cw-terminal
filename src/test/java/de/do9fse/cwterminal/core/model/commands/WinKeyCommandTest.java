@@ -28,13 +28,13 @@ public class WinKeyCommandTest {
 
     @Test 
     void testSuite1() throws Exception {
-        final List<Class<WinKeyCommand<?>>> validCommandClasses = WinKeyCommand.validateCommands(BASE_PACKAGE + ".suite1");
+        final List<Class<WinKeyCommand>> validCommandClasses = WinKeyCommand.validateCommands(BASE_PACKAGE + ".suite1");
         assertEquals(0, validCommandClasses.size());
     }
 
     @Test 
     void testSuite2() throws Exception {
-        final List<Class<WinKeyCommand<?>>> validCommandClasses = WinKeyCommand.validateCommands(BASE_PACKAGE + ".suite2");
+        final List<Class<WinKeyCommand>> validCommandClasses = WinKeyCommand.validateCommands(BASE_PACKAGE + ".suite2");
         assertEquals(0, validCommandClasses.size());
     }
 
@@ -52,23 +52,23 @@ public class WinKeyCommandTest {
 
     @Test
     void testSuite4() throws Exception {
-        final List<Class<WinKeyCommand<?>>> validCommandClasses = WinKeyCommand.validateCommands(BASE_PACKAGE + ".suite4");
+        final List<Class<WinKeyCommand>> validCommandClasses = WinKeyCommand.validateCommands(BASE_PACKAGE + ".suite4");
         assertEquals(0, validCommandClasses.size());
     }
 
     @Test
     void testSuite5() throws Exception {
-        final List<Class<WinKeyCommand<?>>> validCommandClasses = WinKeyCommand.validateCommands(BASE_PACKAGE + ".suite5");
+        final List<Class<WinKeyCommand>> validCommandClasses = WinKeyCommand.validateCommands(BASE_PACKAGE + ".suite5");
         assertEquals(2, validCommandClasses.size());
 
-        final CommandInfo<?> commandWithoutResponseInfo = new AdminCommandWithoutResponse().getCommandInfo();
+        final CommandInfo commandWithoutResponseInfo = new AdminCommandWithoutResponse().getCommandInfo();
         assertEquals(EmptyResponse.class, commandWithoutResponseInfo.responseType());
         assertEquals(
             Set.of(WinKeyProtocolVersion.V1, WinKeyProtocolVersion.V2, WinKeyProtocolVersion.V3),
             commandWithoutResponseInfo.allowedProtocolVersions()
         );
 
-        final CommandInfo<?> commandWithResponseInfo = new AdminCommandWithResponse().getCommandInfo();
+        final CommandInfo commandWithResponseInfo = new AdminCommandWithResponse().getCommandInfo();
         assertEquals(WinKeyVersionResponse.class, commandWithResponseInfo.responseType());
         assertEquals(
             Set.of(WinKeyProtocolVersion.V1, WinKeyProtocolVersion.V2, WinKeyProtocolVersion.V3),

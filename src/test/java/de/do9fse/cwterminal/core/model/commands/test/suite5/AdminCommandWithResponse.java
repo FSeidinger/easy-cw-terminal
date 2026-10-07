@@ -9,4 +9,9 @@ import de.do9fse.cwterminal.core.model.responses.WinKeyVersionResponse;
     allowedProtocols = { WinKeyProtocolVersion.V1, WinKeyProtocolVersion.V2, WinKeyProtocolVersion.V3},
     responseType = WinKeyVersionResponse.class
 )
-public record AdminCommandWithResponse() implements AdminCommand<AdminCommandWithResponse> {}
+public record AdminCommandWithResponse() implements AdminCommand {
+    @Override
+    public byte[] getPayloadBytes() {
+        return null;
+    }
+}

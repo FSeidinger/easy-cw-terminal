@@ -1,7 +1,10 @@
 package de.do9fse.cwterminal.infrastructure.winkey.transport.serial;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.text.MessageFormat;
 import java.util.HexFormat;
+import java.util.Optional;
 import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -11,39 +14,37 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import javax.naming.OperationNotSupportedException;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.fazecast.jSerialComm.SerialPort;
 
 import de.do9fse.cwterminal.core.model.WinKeyJob;
-import de.do9fse.cwterminal.core.model.WinKeyVersion;
+import de.do9fse.cwterminal.core.model.commands.CommandInfo;
 import de.do9fse.cwterminal.core.model.commands.WinKeyCommand;
+import de.do9fse.cwterminal.core.model.commands.admin.HostCloseCommand;
 import de.do9fse.cwterminal.core.model.commands.admin.HostOpenCommand;
 import de.do9fse.cwterminal.core.model.error.WinKeyApplicationException;
 import de.do9fse.cwterminal.core.model.error.WinKeyRuntimeException;
+import de.do9fse.cwterminal.core.model.responses.ResponseConfiguration;
+import de.do9fse.cwterminal.core.model.responses.WinKeyResponse;
 import de.do9fse.cwterminal.core.port.out.WinKeyTransport;
-import de.do9fse.cwterminal.infrastructure.winkey.CommandFactory;
 
 public class WinKeySerialTransport implements WinKeyTransport {
     private static final Logger LOGGER = LoggerFactory.getLogger(WinKeySerialTransport.class);
     
     private final SerialPort serialPort;
-    private CommandFactory factory;
 
     private Thread serialPortReaderThread;
     private CompletableFuture<Void> serialPortReaderThreadResult;
 
     private Lock jobQueueLock;
-    private Queue<WinKeyJob<?>> jobQueue;
+    private Queue<WinKeyJob> jobQueue;
 
     private final HexFormat formatter = HexFormat.of().withPrefix("0x").withSuffix(" ");
 
     public WinKeySerialTransport(final SerialPort serialPort) {
         this.serialPort = serialPort;
-        this.factory = new CommandFactory(new WinKeyVersion(1, 0));
         this.jobQueueLock = new ReentrantLock();
         this.jobQueue = new LinkedBlockingQueue<>();
     }
@@ -59,17 +60,17 @@ public class WinKeySerialTransport implements WinKeyTransport {
 
         startSerialPortReaderThread();
 
-        final CompletableFuture<WinKeyVersion> winKeyVersionFuture =  new CompletableFuture<WinKeyVersion>();
-        final WinKeyJob<WinKeyVersion> job = this.submitJob(new HostOpenCommand(), winKeyVersionFuture, false);
+        final CompletableFuture<WinKeyResponse> jobResult = new CompletableFuture<WinKeyResponse>();
+        final WinKeyCommand command = new HostOpenCommand();
+        final WinKeyJob job = this.submitJob(command, jobResult, false);
 
         int maxRetries = 10;
         for (int retries = 0; retries < maxRetries; retries++) {
             this.sendCommand(job);
 
             try {
-                final WinKeyVersion version = winKeyVersionFuture.get(1, TimeUnit.SECONDS);
+                final WinKeyResponse version = jobResult.get(1, TimeUnit.SECONDS);
                 LOGGER.info("Received version {}", version);
-                this.factory = new CommandFactory(version);
 
                 // Signal that initializing attempts were successful
                 break;
@@ -92,6 +93,15 @@ public class WinKeySerialTransport implements WinKeyTransport {
     public void close() throws WinKeyApplicationException {
         if (!serialPort.isOpen()) {
             throw new WinKeyApplicationException("Serial port is not open");
+        }
+
+        final CompletableFuture<WinKeyResponse> jobResult = new CompletableFuture<WinKeyResponse>();
+        this.submitJob(new HostCloseCommand(), jobResult);
+
+        try {
+            jobResult.get(5000, TimeUnit.MILLISECONDS);
+        } catch (final InterruptedException | ExecutionException | TimeoutException e) {
+            LOGGER.warn("Failed to close device");
         }
 
         stopSerialReaderThread();
@@ -127,18 +137,13 @@ public class WinKeySerialTransport implements WinKeyTransport {
     }
 
     @Override
-    public WinKeyJob<Void> submitJob(WinKeyCommand command) throws WinKeyApplicationException {
-        return this.submitJob(command, new CompletableFuture<>());
+    public WinKeyJob submitJob(final WinKeyCommand command, final CompletableFuture<WinKeyResponse> jobResult) throws WinKeyApplicationException {
+        return this.submitJob(command, jobResult, true);
     }
 
-    @Override
-    public <R> WinKeyJob<R> submitJob(WinKeyCommand command, CompletableFuture<R> result) throws WinKeyApplicationException {
-        return this.submitJob(command, result, false);
-    }
-
-    public <R> WinKeyJob<R> submitJob(WinKeyCommand command, CompletableFuture<R> result, final boolean doSend) throws WinKeyApplicationException {
+    private WinKeyJob submitJob(final WinKeyCommand command, final CompletableFuture<WinKeyResponse> jobResult, final boolean doSend) throws WinKeyApplicationException {
         this.jobQueueLock.lock();
-        final WinKeyJob<R> job = WinKeyJob.of(command, result);
+        final WinKeyJob job = new WinKeyJob(command, jobResult);
         this.jobQueue.offer(job);
 
         try {
@@ -155,85 +160,19 @@ public class WinKeySerialTransport implements WinKeyTransport {
         return job;
     }
 
-    private <R> void sendCommand(final WinKeyJob<R> job) throws WinKeyApplicationException {
-        try {
-            final byte[] serialBytes = this.factory.from(job.command());
-            final int writtenBytes = serialPort.writeBytes(serialBytes, serialBytes.length);
+    private void sendCommand(final WinKeyJob job) throws WinKeyApplicationException {
+        final byte[] serialBytes = job.command().toProtocolBytes();
+        final int writtenBytes = serialPort.writeBytes(serialBytes, serialBytes.length);
 
-            if (writtenBytes == -1) {
-                throw new WinKeyRuntimeException("Failed to send command" + job.command());
-            }
+        if (writtenBytes == -1) {
+            throw new WinKeyRuntimeException("Failed to send command" + job.command());
+        }
 
-            if (writtenBytes < serialBytes.length) {
-                throw new WinKeyApplicationException("Only could partially send command");
-            }
-        } catch(final OperationNotSupportedException e) {
-            throw new WinKeyRuntimeException("Failed to convert to serial bytes", e);
+        if (writtenBytes < serialBytes.length) {
+            throw new WinKeyApplicationException("Only could partially send command");
         }
 
         LOGGER.debug("Successfully sent command " + job.command());
-    }
-
-    @SuppressWarnings("unchecked")
-    private <R> R receiveResponse(final WinKeyJob<R> job) throws WinKeyApplicationException {
-        while(true) {
-            int expectedResponseBytes = switch (job.command()) {
-                case HostOpenCommand c -> 1;
-                default -> throw new WinKeyRuntimeException("Command " + job.command() + " not supported");
-            };
-
-            if (expectedResponseBytes > 0) {
-                LOGGER.debug("Expecting {} bytes from device", expectedResponseBytes);
-
-                final byte[] responseBuffer = new byte[expectedResponseBytes];
-                final int receivedBytes = this.serialPort.readBytes(responseBuffer, expectedResponseBytes);
-
-                if (receivedBytes == -1) {
-                    final String message = MessageFormat.format("Failed to read {0} bytes from {1}", expectedResponseBytes, serialPort.getSystemPortPath());
-                    throw new WinKeyRuntimeException(message);
-                }
-
-                if (receivedBytes < expectedResponseBytes) {
-                    final String message = MessageFormat.format("Reading {0} bytes from {1} timed out", expectedResponseBytes, serialPort.getSystemPortPath());
-                    throw new WinKeyApplicationException(message);
-                }
-
-                LOGGER.debug("Received response: {}", formatter.formatHex(responseBuffer));
-
-                final R result = switch (job.command()) {
-                    case HostOpenCommand c -> (R) new WinKeyVersion(responseBuffer[0] / 10, responseBuffer[0] % 10);
-                    default -> throw new WinKeyRuntimeException("Command " + job.command() + " not supported");
-                };
-
-                return result;
-            }
-
-            final byte[] buffer = new byte[1];
-            this.serialPort.readBytes(buffer, buffer.length);
-
-            final byte receivedByte = buffer[0];
-
-            // check for status bytes
-            if (isStatusByte(receivedByte)) {
-                LOGGER.info("Received status byte: {}", formatter.toHexDigits(receivedByte));
-                
-                // TODO Implement status bytes
-                continue;
-            }
-
-            // check for status bytes
-            if (isSpeedPotByte(receivedByte)) {
-                LOGGER.info("Received speed pot byte: {}", formatter.toHexDigits(receivedByte));
-
-                // TODO Implement speed pot bytes
-                continue;
-            }
-
-            LOGGER.info("Received response: {}", formatter.toHexDigits(receivedByte));
-            break;
-        }
-
-        return null;
     }
 
     private void serialPortReader(final CompletableFuture<Void> threadResult) {
@@ -243,66 +182,112 @@ public class WinKeySerialTransport implements WinKeyTransport {
                 return;
             }
 
-            final byte[] buffer = new byte[1];
-            final int receivedBytes = this.serialPort.readBytes(buffer, buffer.length);
-
-            // Check for error on serial device
-            if (receivedBytes == -1) {
-                final String message = MessageFormat.format("Failed to read next byte from {0}", serialPort.getSystemPortPath());
-                final WinKeyRuntimeException e = new WinKeyRuntimeException(message);
-
-                // Signal error
-                threadResult.completeExceptionally(e);
-                return;
-            }
-
-            // Check for timeout
-            if (receivedBytes == 0) {
-                continue;
-            }
-
-            final byte receivedByte = buffer[0];
-
-            // check for status bytes
-            if (isStatusByte(receivedByte)) {
-                LOGGER.info("Received status byte: {}", formatter.toHexDigits(receivedByte));
-                
-                // TODO Implement status bytes
-                continue;
-            }
-
-            // check for status bytes
-            if (isSpeedPotByte(receivedByte)) {
-                LOGGER.info("Received speed pot byte: {}", formatter.toHexDigits(receivedByte));
-
-                // TODO Implement speed pot bytes
-                continue;
-            }
-
-            handleCommandWithResult(receivedByte);
+            final Optional<byte []> unconsumedResponseBytesHolder = processUnsolicitedStatusTransmission();
+            processActiveCommand(unconsumedResponseBytesHolder);
         }
     }
 
-    private void handleCommandWithResult(final byte receivedByte) {
+    private Optional<byte[]> processUnsolicitedStatusTransmission() {
+        final byte[] response = new byte[1];
+        final int receivedResponseByte = this.serialPort.readBytes(response, 1);
+
+        // Check for timeout
+        if (receivedResponseByte == 0) {
+            return Optional.empty();
+        }
+
+        final byte receivedByte = response[0];
+
+        // check for status bytes
+        if (isStatusByte(receivedByte)) {
+            LOGGER.info("Received status byte: {}", formatter.toHexDigits(receivedByte));
+            
+            // TODO Implement status bytes
+            return Optional.empty();
+        }
+
+        // check for status bytes
+        if (isSpeedPotByte(receivedByte)) {
+            LOGGER.info("Received speed pot byte: {}", formatter.toHexDigits(receivedByte));
+
+            // TODO Implement speed pot bytes
+            return Optional.empty();
+        }
+
+        return Optional.of(response);
+    }
+
+    private void processActiveCommand(final Optional<byte[]> unconsumedResponseBytesHolder) {
         try {
             this.jobQueueLock.lock();
-            final WinKeyJob<?> winKeyJob = jobQueue.poll();
+            final WinKeyJob activeJob = jobQueue.poll();
 
-            if (winKeyJob != null) {
-                LOGGER.info("Handling result for command {}", winKeyJob.command());
+            final byte[] unconsumedResponseBytes = unconsumedResponseBytesHolder.isPresent() ? unconsumedResponseBytesHolder.get() : new byte[0];
 
-                switch (winKeyJob.command()) {
-                    case HostOpenCommand c ->  {
-                            @SuppressWarnings("unchecked")
-                            final CompletableFuture<WinKeyVersion> jobResult = (CompletableFuture<WinKeyVersion>) winKeyJob.result();
-                            jobResult.complete(new WinKeyVersion(receivedByte / 10, receivedByte % 10));
-                        }
+            if (activeJob == null) {
+                if (unconsumedResponseBytes.length > 0) {
+                    LOGGER.warn("Received response bytes {} without active command", unconsumedResponseBytes);
+                }
 
-                    default -> LOGGER.warn("Command {} not supported", winKeyJob.command());
-                };
+                return;
             }
+
+            final CommandInfo commandInfo = activeJob.command().getCommandInfo();
+            final Class<WinKeyResponse> responseType = commandInfo.responseType();
+            final ResponseConfiguration responseConfiguration = responseType.getAnnotation(ResponseConfiguration.class);
+
+            if (responseConfiguration == null) {
+                final String message = MessageFormat.format(
+                    "Response type {0} lacks required annotation {1}",
+                    responseType.getSimpleName(),
+                    ResponseConfiguration.class.getSimpleName()
+                );
+
+                throw new WinKeyRuntimeException(message);
+            }
+
+            final WinKeyResponse response = createResponse(unconsumedResponseBytes, responseType, responseConfiguration.expectedResponseBytes());
+            LOGGER.debug("Received response {}", response);
+            activeJob.response().complete(response);
         } finally {
             this.jobQueueLock.unlock();
+        }
+    }
+
+    private WinKeyResponse createResponse(final byte[] unconsumedResponseBytes, final Class<WinKeyResponse> resultType, final int expectedResponseBytes) {
+        final byte[] responseBytes = new byte[expectedResponseBytes];
+
+        final int openResponseBytes = expectedResponseBytes - unconsumedResponseBytes.length;
+        System.arraycopy(unconsumedResponseBytes, 0, responseBytes, 0, unconsumedResponseBytes.length);
+        readUntilResponseComplete(responseBytes, unconsumedResponseBytes, openResponseBytes);
+
+        try {
+            final Method factory = resultType.getMethod("parseResponse", byte[].class);
+            return (WinKeyResponse) factory.invoke(null, responseBytes);
+        } catch (
+            final IllegalAccessException
+                | IllegalArgumentException
+                | InvocationTargetException
+                | NoSuchMethodException
+                | SecurityException e
+            ) {
+                final String message = MessageFormat.format(
+                    "Failed to create result type {0}",
+                    resultType.getSimpleName()
+                );
+
+                throw new WinKeyRuntimeException(message);
+        }
+    }
+
+    private void readUntilResponseComplete(final byte[] buffer, final byte[] unconsumedResponseBytes, final int expectedResponseBytes) {
+        int receivedBytes = unconsumedResponseBytes.length;
+        while (receivedBytes < expectedResponseBytes) {
+            // Read next chunk of data
+            final int nextBytes = this.serialPort.readBytes(buffer, expectedResponseBytes - receivedBytes, receivedBytes);
+
+            // Calculate already received bytes
+            receivedBytes = receivedBytes + nextBytes;
         }
     }
 

@@ -2,7 +2,13 @@ package de.do9fse.cwterminal.core.model.responses;
 
 import java.util.Objects;
 
-public record WinKeyVersionResponse(int majorVersion, int minorVersion) {
+@ResponseConfiguration(expectedResponseBytes = 1)
+public record WinKeyVersionResponse(int majorVersion, int minorVersion) implements WinKeyResponse {
+    public static WinKeyVersionResponse parseResponse(final byte[] responseBytes) {
+        final byte versionByte = responseBytes[0];
+        return new WinKeyVersionResponse(versionByte / 10, versionByte % 10);
+    }
+
     public WinKeyVersionResponse {
         if (majorVersion < 1 || majorVersion > 3) {
             throw new IllegalArgumentException("Unsupported WinKey major version: " + majorVersion);

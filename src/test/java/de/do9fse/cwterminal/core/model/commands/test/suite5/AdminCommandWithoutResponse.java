@@ -7,4 +7,8 @@ import de.do9fse.cwterminal.core.model.commands.admin.AdminCommand;
 @CommandConfiguration(
     allowedProtocols = { WinKeyProtocolVersion.V1, WinKeyProtocolVersion.V2, WinKeyProtocolVersion.V3 }
 )
-public record AdminCommandWithoutResponse() implements AdminCommand<AdminCommandWithoutResponse> {}
+public record AdminCommandWithoutResponse() implements AdminCommand {
+    public byte[] getPayloadBytes() {
+        return null;
+    }
+}

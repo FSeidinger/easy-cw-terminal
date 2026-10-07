@@ -1,3 +1,8 @@
 package de.do9fse.cwterminal.core.model.commands.admin;
 
-public record ReadSpeedA2DCommand() implements AdminCommand<ReadSpeedA2DCommand> {}
+public record ReadSpeedA2DCommand() implements AdminCommand {
+    @Override
+    public byte[] getPayloadBytes() {
+        return new byte[]{ 0x00, 6 };
+    }
+}
