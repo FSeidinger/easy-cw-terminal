@@ -2,24 +2,39 @@ package de.do9fse.cwterminal.core.model.commands.host;
 
 import java.util.Objects;
 
+import javax.measure.Quantity;
+import javax.measure.quantity.Frequency;
+
 import de.do9fse.cwterminal.core.model.WinKeyProtocolVersion;
 import de.do9fse.cwterminal.core.model.commands.CommandConfiguration;
+import tech.units.indriya.quantity.Quantities;
+import tech.units.indriya.unit.Units;
 
 @CommandConfiguration(
     allowedProtocols = WinKeyProtocolVersion.V2
 )
 public record SideToneControlCommand(boolean enablePaddleSideToneOnly, SideToneFrequency sideToneFrequency) implements HostModeCommand {
     public enum SideToneFrequency {
-        FREQUENCY_4000_HZ,
-        FREQUENCY_2000_HZ,
-        FREQUENCY_1333_HZ,
-        FREQUENCY_1000_HZ,
-        FREQUENCY_800_HZ,
-        FREQUENCY_666_HZ,
-        FREQUENCY_571_HZ,
-        FREQUENCY_500_HZ,
-        FREQUENCY_444_HZ,
-        FREQUENCY_400_HZ;
+        FREQUENCY_4000_HZ(4000),
+        FREQUENCY_2000_HZ(2000),
+        FREQUENCY_1333_HZ(1333),
+        FREQUENCY_1000_HZ(1000),
+        FREQUENCY_800_HZ(800),
+        FREQUENCY_666_HZ(666),
+        FREQUENCY_571_HZ(571),
+        FREQUENCY_500_HZ(500),
+        FREQUENCY_444_HZ(444),
+        FREQUENCY_400_HZ(400);
+
+        private final Quantity<Frequency> frequency;
+
+        SideToneFrequency(final int frequencyHz) {
+            this.frequency = Quantities.getQuantity(frequencyHz, Units.HERTZ);
+        }
+
+        public Quantity<Frequency> frequency() {
+            return frequency;
+        }
 
         public static SideToneFrequency parseResponseByte(final int responseByte) {
             final int frequencyCode = (responseByte & 0xff) & 0x0f;

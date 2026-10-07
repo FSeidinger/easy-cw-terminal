@@ -2,14 +2,23 @@ package de.do9fse.cwterminal;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.fazecast.jSerialComm.SerialPort;
 
+import de.do9fse.cwterminal.core.model.commands.WinKeyCommand;
+import de.do9fse.cwterminal.core.model.commands.admin.EchoTestCommand;
+import de.do9fse.cwterminal.core.model.commands.admin.GetValuesCommand;
 import de.do9fse.cwterminal.core.model.error.WinKeyApplicationException;
 import de.do9fse.cwterminal.core.model.error.WinKeyRuntimeException;
+import de.do9fse.cwterminal.core.model.responses.EchoResponse;
+import de.do9fse.cwterminal.core.model.responses.WinKeyResponse;
 import de.do9fse.cwterminal.core.port.out.WinKeyTransport;
 import de.do9fse.cwterminal.infrastructure.winkey.transport.serial.WinKeySerialTransport;
 
@@ -71,6 +80,12 @@ public final class Main {
 
         transport = new WinKeySerialTransport(port);
         transport.open();
+
+        final EchoResponse echoResponse = (EchoResponse) executeCommand(transport, new EchoTestCommand('C'));
+        LOGGER.info("Echo to winkey device succeeded: {}", echoResponse);
+
+        
+        executeCommand(transport, new GetValuesCommand());
     }
 
     private void setRootLogLevel(String levelName) {
@@ -86,6 +101,16 @@ public final class Main {
 
         } catch (final ReflectiveOperationException e) {
             LOGGER.error("Failed to set log level", e);
+        }
+    }
+
+    private WinKeyResponse executeCommand(final WinKeyTransport transport, final WinKeyCommand command) {
+        try {
+            final CompletableFuture<WinKeyResponse> response = new CompletableFuture<>();
+            transport.submitJob(command, response);
+            return response.get(5, TimeUnit.SECONDS);
+        } catch (InterruptedException | ExecutionException | TimeoutException | WinKeyApplicationException e) {
+            throw new WinKeyRuntimeException("Failed to execute command " + command, e);
         }
     }
 }
