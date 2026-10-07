@@ -6,6 +6,7 @@
         "fazecast",
         "indriya",
         "inmemory",
+        "jacoco",
         "javax",
         "logback",
         "mvnw",
