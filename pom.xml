@@ -39,6 +39,24 @@
             </dependency>
 
             <dependency>
+                <groupId>javax.measure</groupId>
+                <artifactId>unit-api</artifactId>
+                <version>2.2</version>
+            </dependency>
+
+            <dependency>
+                <groupId>tech.uom.lib</groupId>
+                <artifactId>uom-lib-common</artifactId>
+                <version>2.2</version>
+            </dependency>
+
+            <dependency>
+                <groupId>tech.units</groupId>
+                <artifactId>indriya</artifactId>
+                <version>2.2</version>
+            </dependency>            
+
+            <dependency>
                 <groupId>org.junit.jupiter</groupId>
                 <artifactId>junit-jupiter</artifactId>
                 <version>5.12.2</version>
@@ -75,6 +93,22 @@
             <groupId>com.fazecast</groupId>
             <artifactId>jSerialComm</artifactId>
         </dependency>
+
+        <dependency>
+            <groupId>tech.uom.lib</groupId>
+            <artifactId>uom-lib-common</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>javax.measure</groupId>
+            <artifactId>unit-api</artifactId>
+            <version>2.2</version>
+        </dependency>
+
+        <dependency>
+            <groupId>tech.units</groupId>
+            <artifactId>indriya</artifactId>
+        </dependency>            
 
         <dependency>
             <groupId>org.junit.jupiter</groupId>

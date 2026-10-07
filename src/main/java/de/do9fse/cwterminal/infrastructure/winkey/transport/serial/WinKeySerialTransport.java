@@ -191,8 +191,10 @@ public class WinKeySerialTransport implements WinKeyTransport {
         final byte[] response = new byte[1];
         final int receivedResponseByte = this.serialPort.readBytes(response, 1);
 
-        // Check for timeout
+        checkForReceiveErrors(receivedResponseByte);
+
         if (receivedResponseByte == 0) {
+            // Ignore timeouts and try command processing
             return Optional.empty();
         }
 
@@ -257,9 +259,13 @@ public class WinKeySerialTransport implements WinKeyTransport {
     private WinKeyResponse createResponse(final byte[] unconsumedResponseBytes, final Class<WinKeyResponse> resultType, final int expectedResponseBytes) {
         final byte[] responseBytes = new byte[expectedResponseBytes];
 
-        final int openResponseBytes = expectedResponseBytes - unconsumedResponseBytes.length;
-        System.arraycopy(unconsumedResponseBytes, 0, responseBytes, 0, unconsumedResponseBytes.length);
-        readUntilResponseComplete(responseBytes, unconsumedResponseBytes, openResponseBytes);
+        // Take unconsumed response bytes into account
+        if (unconsumedResponseBytes.length > 0) {
+            System.arraycopy(unconsumedResponseBytes, 0, responseBytes, 0, unconsumedResponseBytes.length);
+        }
+
+        final int startIndex = unconsumedResponseBytes.length;
+        readUntilResponseComplete(responseBytes, startIndex, expectedResponseBytes);
 
         try {
             final Method factory = resultType.getMethod("parseResponse", byte[].class);
@@ -280,14 +286,20 @@ public class WinKeySerialTransport implements WinKeyTransport {
         }
     }
 
-    private void readUntilResponseComplete(final byte[] buffer, final byte[] unconsumedResponseBytes, final int expectedResponseBytes) {
-        int receivedBytes = unconsumedResponseBytes.length;
-        while (receivedBytes < expectedResponseBytes) {
+    private void readUntilResponseComplete(final byte[] buffer, final int startIndex, final int expectedResponseBytes) {
+        final int lastIndex = expectedResponseBytes;
+        int currentIndex = startIndex;
+
+        while (currentIndex < lastIndex) {
+            final int remainingBytes = lastIndex - currentIndex;
+
             // Read next chunk of data
-            final int nextBytes = this.serialPort.readBytes(buffer, expectedResponseBytes - receivedBytes, receivedBytes);
+            final int nextBytes = this.serialPort.readBytes(buffer, remainingBytes, currentIndex);
+
+            checkForReceiveErrors(nextBytes);
 
             // Calculate already received bytes
-            receivedBytes = receivedBytes + nextBytes;
+            currentIndex += nextBytes;
         }
     }
 
@@ -297,5 +309,17 @@ public class WinKeySerialTransport implements WinKeyTransport {
 
     private boolean isSpeedPotByte(final byte receivedByte) {
         return (receivedByte & 0xC0) == 0x80;
+    }
+
+    private void checkForReceiveErrors(final int readBytes) {
+        // Received on timeout
+        if (readBytes == 0) {
+            // Swallow silentlty
+            return;
+        }
+
+        if (readBytes < 0) {
+            throw new WinKeyRuntimeException("Connection to device broken");
+        }
     }
 }

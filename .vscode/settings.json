@@ -1,9 +1,12 @@
 {
     "cSpell.ignoreWords": [
         "EEPROM",
+        "MILLI",
         "classgraph",
         "fazecast",
+        "indriya",
         "inmemory",
+        "javax",
         "logback",
         "mvnw",
         "rawtypes",
@@ -11,9 +14,15 @@
     ],
     
     "cSpell.words": [
+        "Autospace",
         "CWTerminal",
+        "Echoback",
+        "Farnsworth",
         "Keyer",
+        "LetterSpace",
+        "LetterSpaces",
         "Sidetone",
+        "ULTIMATIC",
         "WinKey",
         "Winkeyer"
     ],
@@ -22,5 +31,17 @@
     "java.codeGeneration.addFinalForNewDeclaration": "all",
     "java.jdt.ls.vmargs": "-XX:+UseG1GC -XX:+UseStringDeduplication -Xms2G -Xmx8G",
     "java.project.explorer.showNonJavaResources": true,
-    "java.dependency.packagePresentation": "hierarchical"
+    "java.dependency.packagePresentation": "hierarchical",
+    "java.completion.favoriteStaticMembers": [
+        "javax.measure.MetricPrefix.*",
+        "org.junit.Assert.*",
+        "org.junit.Assume.*",
+        "org.junit.jupiter.api.Assertions.*",
+        "org.junit.jupiter.api.Assumptions.*",
+        "org.junit.jupiter.api.DynamicContainer.*",
+        "org.junit.jupiter.api.DynamicTest.*",
+        "org.mockito.Answers.*",
+        "org.mockito.ArgumentMatchers.*",
+        "org.mockito.Mockito.*"
+    ]
 }

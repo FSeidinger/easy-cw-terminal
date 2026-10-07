@@ -13,7 +13,26 @@ public record SideToneControlCommand(boolean enablePaddleSideToneOnly, SideToneF
         FREQUENCY_571_HZ,
         FREQUENCY_500_HZ,
         FREQUENCY_444_HZ,
-        FREQUENCY_400_HZ
+        FREQUENCY_400_HZ;
+
+        public static SideToneFrequency parseResponseByte(final int responseByte) {
+            final int frequencyCode = (responseByte & 0xff) & 0x0f;
+            return switch (frequencyCode) {
+                case 1 -> FREQUENCY_4000_HZ;
+                case 2 -> FREQUENCY_2000_HZ;
+                case 3 -> FREQUENCY_1333_HZ;
+                case 4 -> FREQUENCY_1000_HZ;
+                case 5 -> FREQUENCY_800_HZ;
+                case 6 -> FREQUENCY_666_HZ;
+                case 7 -> FREQUENCY_571_HZ;
+                case 8 -> FREQUENCY_500_HZ;
+                case 9 -> FREQUENCY_444_HZ;
+                case 10 -> FREQUENCY_400_HZ;
+                default -> throw new IllegalArgumentException(
+                    "Unsupported side tone frequency code: " + frequencyCode
+                );
+            };
+        }
     }
 
     public SideToneControlCommand {
