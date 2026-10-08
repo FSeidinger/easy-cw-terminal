@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 class WeightingTest {
     @Test
     void parsesPercentage() {
-        assertEquals(50.0, Weighting.fromProtocol(50).percentage().getValue().doubleValue());
+        assertEquals(50.0, Weighting.fromProtocol(50).value().getValue().doubleValue());
     }
 
     @Test

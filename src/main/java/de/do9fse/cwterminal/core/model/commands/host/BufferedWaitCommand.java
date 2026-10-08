@@ -14,6 +14,7 @@ import tech.units.indriya.unit.Units;
 public record BufferedWaitCommand(Quantity<Time> duration) implements HostModeCommand {
     public BufferedWaitCommand {
         Objects.requireNonNull(duration, "Buffered wait duration must not be null");
+        
         duration = Quantities.getQuantity(
             HostCommandSupport.requireIntegralDurationSeconds("Buffered wait", duration),
             Units.SECOND

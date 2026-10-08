@@ -26,6 +26,7 @@ import de.do9fse.cwterminal.core.model.configuration.PinConfiguration;
 import de.do9fse.cwterminal.core.model.configuration.Weighting;
 import de.do9fse.cwterminal.core.model.configuration.WPMSpeed;
 import de.do9fse.cwterminal.core.model.configuration.WPMSpeedRange;
+import de.do9fse.cwterminal.core.model.configuration.WPMSpeedWithReset;
 import de.do9fse.cwterminal.core.model.configuration.WinKeyUnits;
 import de.do9fse.cwterminal.core.model.responses.SpeedPotValueResponse;
 import de.do9fse.cwterminal.core.model.responses.WinKeyStatusResponse;
@@ -66,9 +67,12 @@ class HostModeCommandTest {
     @Test
     void encodesImmediateHostCommands() {
         assertPayload(SetSpeedCommand.useSpeedPot(), new byte[] { 0x02, 0x00 });
-        assertPayload(new SetSpeedCommand(Quantities.getQuantity(99, WinKeyUnits.WPM)), new byte[] { 0x02, 0x63 });
         assertPayload(
-            new SetWeightingCommand(Weighting.parseResponseByte(50)),
+            new SetSpeedCommand(new WPMSpeedWithReset(WPMSpeed.fromProtocol(99))),
+            new byte[] { 0x02, 0x63 }
+        );
+        assertPayload(
+            new SetWeightingCommand(Weighting.fromProtocol(50)),
             new byte[] { 0x03, 0x32 }
         );
         assertPayload(
@@ -79,8 +83,8 @@ class HostModeCommandTest {
             new byte[] { 0x04, 0x01, (byte) 0xfa }
         );
         assertPayload(
-            new SetupSpeedPotCommand(WPMSpeed.parseResponseByte(10), WPMSpeedRange.parseResponseByte(15), 0),
-            new byte[] { 0x05, 0x0a, 0x0f, 0x00 }
+            new SetupSpeedPotCommand(WPMSpeed.fromProtocol(10), WPMSpeedRange.fromProtocol(15), 42),
+            new byte[] { 0x05, 0x0a, 0x0f, 0x2a }
         );
         assertPayload(new PauseCommand(true), new byte[] { 0x06, 0x01 });
         assertPayload(new GetSpeedPotCommand(), new byte[] { 0x07 });
@@ -103,7 +107,7 @@ class HostModeCommandTest {
             new byte[] { 0x0c, 0x14 }
         );
         assertPayload(
-            new SetFarnsworthSpeedCommand(FarnsworthSpeed.parseResponseByte(18)),
+            new SetFarnsworthSpeedCommand(FarnsworthSpeed.fromProtocol(18)),
             new byte[] { 0x0d, 0x12 }
         );
         assertPayload(
@@ -120,15 +124,15 @@ class HostModeCommandTest {
         assertPayload(new LoadDefaultsCommand(defaults), loadPayload);
 
         assertPayload(
-            new SetFirstExtensionCommand(FirstExtensionDelay.parseResponseByte(80)),
+            new SetFirstExtensionCommand(FirstExtensionDelay.fromProtocol(80)),
             new byte[] { 0x10, 0x50 }
         );
         assertPayload(
-            new SetKeyCompensationCommand(KeyCompensation.parseResponseByte(180)),
+            new SetKeyCompensationCommand(KeyCompensation.fromProtocol(180)),
             new byte[] { 0x11, (byte) 0xb4 }
         );
         assertPayload(
-            new SetPaddleSwitchpointCommand(PaddleSetpoint.parseResponseByte(55)),
+            new SetPaddleSwitchPointCommand(PaddleSetpoint.fromProtocol(55)),
             new byte[] { 0x12, 0x37 }
         );
         assertPayload(new NullCommand(), new byte[] { 0x13 });
@@ -151,7 +155,7 @@ class HostModeCommandTest {
             new byte[] { 0x16, 0x03, 0x0a }
         );
         assertPayload(
-            new SetDitDahRatioCommand(DitDahRatio.parseResponseByte(50)),
+            new SetDitDahRatioCommand(DitDahRatio.fromProtocol(50)),
             new byte[] { 0x17, 0x32 }
         );
     }
@@ -182,6 +186,14 @@ class HostModeCommandTest {
 
     @Test
     void hostCommandsDeclareProtocolAndResponseMetadata() {
+        final WinKeyCommand setupSpeedPotCommand = new SetupSpeedPotCommand(
+            WPMSpeed.fromProtocol(10),
+            WPMSpeedRange.fromProtocol(15),
+            42
+        );
+        assertTrue(setupSpeedPotCommand.getCommandInfo().supportsProtocol(WinKeyProtocolVersion.V1));
+        assertTrue(setupSpeedPotCommand.getCommandInfo().supportsProtocol(WinKeyProtocolVersion.V2));
+
         final WinKeyCommand speedPotCommand = new GetSpeedPotCommand();
         assertTrue(speedPotCommand.getCommandInfo().supportsProtocol(WinKeyProtocolVersion.V2));
         assertEquals(SpeedPotValueResponse.class, speedPotCommand.getCommandInfo().responseType());
@@ -198,13 +210,25 @@ class HostModeCommandTest {
 
     @Test
     void validatesProtocolRangesAndCopiesLoadDefaults() {
-        assertThrows(
+        final IllegalArgumentException belowMinimumSpeed = assertThrows(
             IllegalArgumentException.class,
-            () -> new SetSpeedCommand(Quantities.getQuantity(4, WinKeyUnits.WPM))
+            () -> new WPMSpeedWithReset(Quantities.getQuantity(4, WinKeyUnits.WPM))
+        );
+        assertEquals(
+            "CW speed must be between "
+                + WPMSpeed.WPM_MIN
+                + " and "
+                + WPMSpeed.WPM_MAX
+                + " or 0 but was 4 WPM",
+            belowMinimumSpeed.getMessage()
         );
         assertThrows(
             IllegalArgumentException.class,
-            () -> new SetSpeedCommand(Quantities.getQuantity(100, WinKeyUnits.WPM))
+            () -> new WPMSpeedWithReset(Quantities.getQuantity(100, WinKeyUnits.WPM))
+        );
+        assertEquals(
+            46,
+            new WPMSpeedWithReset(Quantities.getQuantity(45.5, WinKeyUnits.WPM)).toProtocolValue()
         );
         assertThrows(
             IllegalArgumentException.class,
@@ -216,8 +240,8 @@ class HostModeCommandTest {
         assertThrows(
             IllegalArgumentException.class,
             () -> new SetupSpeedPotCommand(
-                WPMSpeed.parseResponseByte(90),
-                WPMSpeedRange.parseResponseByte(10),
+                WPMSpeed.fromProtocol(90),
+                WPMSpeedRange.fromProtocol(10),
                 0
             )
         );

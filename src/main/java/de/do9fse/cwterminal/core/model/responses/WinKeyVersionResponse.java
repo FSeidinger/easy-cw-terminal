@@ -22,6 +22,7 @@ public record WinKeyVersionResponse(int majorVersion, int minorVersion) implemen
                 MAJOR_VERSION_MAX,
                 majorVersion
             );
+
             throw new IllegalArgumentException(message);
         }
 
@@ -31,6 +32,7 @@ public record WinKeyVersionResponse(int majorVersion, int minorVersion) implemen
                 MINOR_VERSION_MIN,
                 minorVersion
             );
+            
             throw new IllegalArgumentException(message);
         }
     }

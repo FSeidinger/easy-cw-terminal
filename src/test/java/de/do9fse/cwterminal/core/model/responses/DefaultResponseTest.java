@@ -36,15 +36,15 @@ class DefaultResponseTest {
         final DefaultsResponse response = DefaultsResponse.fromProtocol(responseBytes);
 
         assertEquals(KeyMode.BUG_MODE, response.mode().keyMode());
-        assertEquals(25.0, response.wpmSpeed().wpmSpeed().getValue().doubleValue());
+        assertEquals(25.0, response.wpmSpeed().value().getValue().doubleValue());
         assertEquals(SideToneFrequency.FREQUENCY_1000_HZ, response.sideToneFrequency());
-        assertEquals(50.0, response.weighting().percentage().getValue().doubleValue());
-        assertEquals(12.0, delayInMilliseconds(response.leadInDelay().delay()));
-        assertEquals(25.0, delayInMilliseconds(response.tailDelay().delay()));
-        assertEquals(50.0, delayInMilliseconds(response.firstExtensionDelay().delay()));
-        assertEquals(7.0, delayInMilliseconds(response.keyCompensation().duration()));
+        assertEquals(50.0, response.weighting().value().getValue().doubleValue());
+        assertEquals(12.0, delayInMilliseconds(response.leadInDelay().value()));
+        assertEquals(25.0, delayInMilliseconds(response.tailDelay().value()));
+        assertEquals(50.0, delayInMilliseconds(response.firstExtensionDelay().value()));
+        assertEquals(7.0, delayInMilliseconds(response.keyCompensation().value()));
         assertEquals(18.0, response.farnsworthSpeed().value().getValue().doubleValue());
-        assertEquals(55.0, response.paddleSetpoint().percentage().getValue().doubleValue());
+        assertEquals(55.0, response.paddleSetpoint().value().getValue().doubleValue());
         assertEquals(3.0, response.ditDahRatio().value().getValue().doubleValue());
         assertEquals(PinConfiguration.UltimaticPriority.DIT, response.pinConfiguration().ultimaticPriority());
         assertEquals(255, response.reservedValue());

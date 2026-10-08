@@ -1,6 +1,8 @@
 package de.do9fse.cwterminal.core.model.commands.admin;
 
 import static de.do9fse.cwterminal.testtools.CommandTestTools.assertPayload;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.Test;
 
@@ -24,4 +26,21 @@ class AdminCommandTest {
         assertPayload(new SendStandaloneMessageCommand(6), new byte[] { 0x00, 14, 6 });
     }
 
+    @Test
+    void reportsConfiguredBoundsForInvalidAdminCommandValues() {
+        final IllegalArgumentException invalidMessageId = assertThrows(
+            IllegalArgumentException.class,
+            () -> new SendStandaloneMessageCommand(7)
+        );
+        assertEquals("Message ID must be between 0 and 6 but was 7", invalidMessageId.getMessage());
+
+        final IllegalArgumentException invalidEchoCharacter = assertThrows(
+            IllegalArgumentException.class,
+            () -> new EchoTestCommand('\u007f')
+        );
+        assertEquals(
+            "Echo character must be printable ASCII between 32 and 126 but was 127",
+            invalidEchoCharacter.getMessage()
+        );
+    }
 }

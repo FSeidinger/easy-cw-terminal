@@ -12,14 +12,14 @@ import tech.units.indriya.ComparableQuantity;
 import tech.units.indriya.quantity.Quantities;
 import tech.units.indriya.unit.Units;
 
-public record KeyCompensation(Quantity<Time> duration) {
+public record KeyCompensation(Quantity<Time> value) {
     public static final ComparableQuantity<Time> DURATION_MIN = Quantities.getQuantity(0, MILLI(Units.SECOND));
     public static final ComparableQuantity<Time> DURATION_MAX = Quantities.getQuantity(250, MILLI(Units.SECOND));
 
     public KeyCompensation {
-        Objects.requireNonNull(duration, "Duration of key compensation must not be null");
+        Objects.requireNonNull(value, "Duration of key compensation must not be null");
 
-        final ComparableQuantity<Time> inMilliseconds = WinKeyUnits.asMilliseconds(duration);
+        final ComparableQuantity<Time> inMilliseconds = WinKeyUnits.asMilliseconds(value);
 
         if (inMilliseconds.isLessThan(DURATION_MIN) || inMilliseconds.isGreaterThan(DURATION_MAX)) {
             final String message = MessageFormat.format(
@@ -32,7 +32,7 @@ public record KeyCompensation(Quantity<Time> duration) {
             throw new IllegalArgumentException(message);
         }
 
-        duration = inMilliseconds;
+        value = inMilliseconds;
     }
 
     public static KeyCompensation fromProtocol(final int value) {
@@ -41,6 +41,6 @@ public record KeyCompensation(Quantity<Time> duration) {
     }
 
     public int toProtocolValue() {
-        return (int) Math.round(duration.getValue().doubleValue());
+        return (int) Math.round(value.getValue().doubleValue());
     }
 }

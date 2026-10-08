@@ -16,13 +16,6 @@ public record SetPinConfigurationCommand(PinConfiguration configuration) impleme
 
     @Override
     public byte[] getPayloadBytes() {
-        final int value =
-            (configuration.ultimaticPriority().ordinal() << 6)
-                | (configuration.paddleHangTime().ordinal() << 4)
-                | (configuration.isKeyOutput1Enabled() ? 0x08 : 0)
-                | (configuration.isKeyOutput2Enabled() ? 0x04 : 0)
-                | (configuration.isSidetoneEnabled() ? 0x02 : 0)
-                | (configuration.isPttEnabled() ? 0x01 : 0);
-        return new byte[] { 0x09, (byte) value };
+        return new byte[] { 0x09, (byte) configuration.toProtocolValue() };
     }
 }

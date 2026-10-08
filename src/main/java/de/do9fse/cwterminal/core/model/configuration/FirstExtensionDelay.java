@@ -12,14 +12,14 @@ import tech.units.indriya.ComparableQuantity;
 import tech.units.indriya.quantity.Quantities;
 import tech.units.indriya.unit.Units;
 
-public record FirstExtensionDelay(Quantity<Time> delay) {
+public record FirstExtensionDelay(Quantity<Time> value) {
     public static final ComparableQuantity<Time> DELAY_MIN = Quantities.getQuantity(0, MILLI(Units.SECOND));
     public static final ComparableQuantity<Time> DELAY_MAX = Quantities.getQuantity(250, MILLI(Units.SECOND));
 
     public FirstExtensionDelay {
-        Objects.requireNonNull(delay, "First extension delay must not be null");
+        Objects.requireNonNull(value, "First extension delay must not be null");
 
-        final ComparableQuantity<Time> inMilliseconds = WinKeyUnits.asMilliseconds(delay);
+        final ComparableQuantity<Time> inMilliseconds = WinKeyUnits.asMilliseconds(value);
 
         if (inMilliseconds.isLessThan(DELAY_MIN) || inMilliseconds.isGreaterThan(DELAY_MAX)) {
             final String message = MessageFormat.format(
@@ -32,7 +32,7 @@ public record FirstExtensionDelay(Quantity<Time> delay) {
             throw new IllegalArgumentException(message);
         }
 
-        delay = inMilliseconds;
+        value = inMilliseconds;
     }
 
     public static FirstExtensionDelay fromProtocol(final int value) {
@@ -41,7 +41,7 @@ public record FirstExtensionDelay(Quantity<Time> delay) {
     }
 
     public int toProtocolValue() {
-        return (int) Math.round(delay.getValue().doubleValue());
+        return (int) Math.round(value.getValue().doubleValue());
     }
 
 }

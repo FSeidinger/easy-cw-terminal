@@ -4,6 +4,7 @@
         "MILLI",
         "classgraph",
         "fazecast",
+        "HSCW",
         "indriya",
         "inmemory",
         "jacoco",

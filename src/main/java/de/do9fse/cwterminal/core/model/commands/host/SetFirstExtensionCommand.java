@@ -14,6 +14,6 @@ public record SetFirstExtensionCommand(FirstExtensionDelay delay) implements Hos
 
     @Override
     public byte[] getPayloadBytes() {
-        return new byte[] { 0x10, (byte) delay.delay().getValue().intValue() };
+        return new byte[] { 0x10, (byte) delay.toProtocolValue() };
     }
 }

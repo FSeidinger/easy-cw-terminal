@@ -13,6 +13,7 @@ import tech.units.indriya.unit.Units;
 public record TimedKeyDownCommand(Quantity<Time> duration) implements HostModeCommand {
     public TimedKeyDownCommand {
         Objects.requireNonNull(duration, "Timed key down duration must not be null");
+        
         duration = Quantities.getQuantity(
             HostCommandSupport.requireIntegralDurationSeconds("Timed key down", duration),
             Units.SECOND

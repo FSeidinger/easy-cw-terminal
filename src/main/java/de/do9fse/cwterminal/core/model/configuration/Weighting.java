@@ -10,14 +10,14 @@ import tech.units.indriya.ComparableQuantity;
 import tech.units.indriya.quantity.Quantities;
 import tech.units.indriya.unit.Units;
 
-public record Weighting(Quantity<Dimensionless> percentage) {
+public record Weighting(Quantity<Dimensionless> value) {
     public static final ComparableQuantity<Dimensionless> PERCENT_MIN = Quantities.getQuantity(10, Units.PERCENT);
     public static final ComparableQuantity<Dimensionless> PERCENT_MAX = Quantities.getQuantity(90, Units.PERCENT);
 
     public Weighting {
-        Objects.requireNonNull(percentage, "Weighting value must not be null");
+        Objects.requireNonNull(value, "Weighting value must not be null");
 
-        final ComparableQuantity<Dimensionless> inPercent = WinKeyUnits.asPercent(percentage);
+        final ComparableQuantity<Dimensionless> inPercent = WinKeyUnits.asPercent(value);
 
         if (inPercent.isLessThan(PERCENT_MIN) || inPercent.isGreaterThan(PERCENT_MAX)) {
             final String message = MessageFormat.format(
@@ -29,7 +29,7 @@ public record Weighting(Quantity<Dimensionless> percentage) {
             throw new IllegalArgumentException(message);
         }
 
-        percentage = inPercent;
+        value = inPercent;
     }
 
     public static Weighting fromProtocol(final int value) {
@@ -37,6 +37,6 @@ public record Weighting(Quantity<Dimensionless> percentage) {
     }
 
     public int toProtocolValue() {
-        return (int) Math.round(percentage.getValue().doubleValue());
+        return (int) Math.round(value.getValue().doubleValue());
     }
 }

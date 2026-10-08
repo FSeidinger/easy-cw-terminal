@@ -73,7 +73,7 @@ class KeyCompensationTest {
             @ParameterizedTest(name = "should decode {0} as {1} milliseconds")
             void Then_the_value_is_converted_to_a_duration(final int value, final double expectedMilliseconds) {
                 final double actualMilliseconds = KeyCompensation.fromProtocol(value)
-                    .duration()
+                    .value()
                     .to(MILLI(Units.SECOND))
                     .getValue()
                     .doubleValue();

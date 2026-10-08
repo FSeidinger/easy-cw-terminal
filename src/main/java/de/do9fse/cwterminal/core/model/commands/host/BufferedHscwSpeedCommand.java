@@ -1,5 +1,6 @@
 package de.do9fse.cwterminal.core.model.commands.host;
 
+import java.text.MessageFormat;
 import java.util.Objects;
 
 import javax.measure.Quantity;
@@ -14,21 +15,33 @@ import tech.units.indriya.quantity.Quantities;
 public record BufferedHscwSpeedCommand(Quantity<Frequency> lpm) implements HostModeCommand {
     public BufferedHscwSpeedCommand {
         Objects.requireNonNull(lpm, "Buffered HSCW speed must not be null");
+
         final int lpmValue = HostCommandSupport.requireIntegralFrequencyRange(
             "Buffered HSCW speed",
             lpm,
             WinKeyUnits.LPM,
-            1000,
-            8000
+            HostCommandSupport.HSCW_SPEED_MIN_LPM,
+            HostCommandSupport.HSCW_SPEED_MAX_LPM
         );
-        if (lpmValue % 100 != 0) {
-            throw new IllegalArgumentException("Buffered HSCW speed must be a multiple of 100 LPM");
+
+        if (lpmValue % HostCommandSupport.HSCW_SPEED_STEP_LPM != 0) {
+            final String message = MessageFormat.format(
+                "Buffered HSCW speed must be a multiple of {0} LPM but was {1} LPM",
+                HostCommandSupport.HSCW_SPEED_STEP_LPM,
+                lpmValue
+            );
+
+            throw new IllegalArgumentException(message);
         }
+        
         lpm = Quantities.getQuantity(lpmValue, WinKeyUnits.LPM);
     }
 
     @Override
     public byte[] getPayloadBytes() {
-        return new byte[] { 0x1d, (byte) (lpm.getValue().intValue() / 100) };
+        return new byte[] {
+            0x1d,
+            (byte) (lpm.getValue().intValue() / HostCommandSupport.HSCW_SPEED_STEP_LPM)
+        };
     }
 }

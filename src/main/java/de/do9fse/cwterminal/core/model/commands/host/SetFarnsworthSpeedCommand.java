@@ -14,6 +14,6 @@ public record SetFarnsworthSpeedCommand(FarnsworthSpeed speed) implements HostMo
 
     @Override
     public byte[] getPayloadBytes() {
-        return new byte[] { 0x0d, (byte) speed.wpmSpeed().getValue().intValue() };
+        return new byte[] { 0x0d, (byte) speed.toProtocolValue() };
     }
 }

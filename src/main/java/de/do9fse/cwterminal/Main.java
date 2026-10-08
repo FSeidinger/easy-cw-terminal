@@ -13,14 +13,19 @@ import org.slf4j.LoggerFactory;
 import com.fazecast.jSerialComm.SerialPort;
 
 import de.do9fse.cwterminal.core.model.commands.WinKeyCommand;
-import de.do9fse.cwterminal.core.model.commands.admin.EchoTestCommand;
-import de.do9fse.cwterminal.core.model.commands.admin.GetValuesCommand;
+import de.do9fse.cwterminal.core.model.commands.host.SetModeCommand;
+import de.do9fse.cwterminal.core.model.commands.host.SetSpeedCommand;
+import de.do9fse.cwterminal.core.model.configuration.KeyMode;
+import de.do9fse.cwterminal.core.model.configuration.ModeRegister;
+import de.do9fse.cwterminal.core.model.configuration.WPMSpeedWithReset;
 import de.do9fse.cwterminal.core.model.error.WinKeyApplicationException;
 import de.do9fse.cwterminal.core.model.error.WinKeyRuntimeException;
-import de.do9fse.cwterminal.core.model.responses.EchoResponse;
+import de.do9fse.cwterminal.core.model.responses.EmptyResponse;
 import de.do9fse.cwterminal.core.model.responses.WinKeyResponse;
 import de.do9fse.cwterminal.core.port.out.WinKeyTransport;
 import de.do9fse.cwterminal.infrastructure.winkey.transport.serial.WinKeySerialTransport;
+import tech.units.indriya.AbstractUnit;
+import tech.units.indriya.quantity.Quantities;
 
 public final class Main {
     private static final Logger LOGGER = LoggerFactory.getLogger(Main.class);
@@ -81,11 +86,29 @@ public final class Main {
         transport = new WinKeySerialTransport(port);
         transport.open();
 
-        final EchoResponse echoResponse = (EchoResponse) executeCommand(transport, new EchoTestCommand('C'));
-        LOGGER.info("Echo to winkey device succeeded: {}", echoResponse);
+        final EmptyResponse setModeCommandResponse = (EmptyResponse) executeCommand(
+            transport,
+            new SetModeCommand(
+                new ModeRegister(
+                    true, 
+                    true,
+                    KeyMode.IAMBIC_B,
+                    false,
+                    false,
+                    false,
+                    false
+                )
+            )
+        );
+        LOGGER.info("Set mode command succeeded: {}", setModeCommandResponse);
 
-        
-        executeCommand(transport, new GetValuesCommand());
+        final EmptyResponse response = (EmptyResponse) executeCommand(
+            transport,
+            new SetSpeedCommand(
+                new WPMSpeedWithReset(Quantities.getQuantity(0, AbstractUnit.ONE))
+            )
+        );
+        LOGGER.info("Set speed command succeeded: {}", response);
     }
 
     private void setRootLogLevel(String levelName) {

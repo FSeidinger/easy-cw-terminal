@@ -1,5 +1,6 @@
 package de.do9fse.cwterminal.core.model.commands.host;
 
+import java.text.MessageFormat;
 import java.util.Objects;
 
 import de.do9fse.cwterminal.core.model.WinKeyProtocolVersion;
@@ -7,6 +8,8 @@ import de.do9fse.cwterminal.core.model.commands.CommandConfiguration;
 
 @CommandConfiguration(allowedProtocols = WinKeyProtocolVersion.V2)
 public record SetBufferPointerCommand(Operation operation, int positionOrNullCount) implements HostModeCommand {
+    private static final int RESET_VALUE = -1;
+
     public enum Operation {
         RESET,
         OVERWRITE,
@@ -16,17 +19,28 @@ public record SetBufferPointerCommand(Operation operation, int positionOrNullCou
 
     public SetBufferPointerCommand {
         Objects.requireNonNull(operation, "Buffer pointer operation must not be null");
+        
         if (operation == Operation.RESET) {
-            if (positionOrNullCount != -1) {
-                throw new IllegalArgumentException("Reset operation does not accept a position or null count");
+            if (positionOrNullCount != RESET_VALUE) {
+                final String message = MessageFormat.format(
+                    "Reset operation requires position or null count {0} but was {1}",
+                    RESET_VALUE,
+                    positionOrNullCount
+                );
+                throw new IllegalArgumentException(message);
             }
         } else {
-            HostCommandSupport.requireRange("Buffer pointer position or null count", positionOrNullCount, 0, 255);
+            HostCommandSupport.requireRange(
+                "Buffer pointer position or null count",
+                positionOrNullCount,
+                HostCommandSupport.PROTOCOL_BYTE_MIN,
+                HostCommandSupport.PROTOCOL_BYTE_MAX
+            );
         }
     }
 
     public static SetBufferPointerCommand reset() {
-        return new SetBufferPointerCommand(Operation.RESET, -1);
+        return new SetBufferPointerCommand(Operation.RESET, RESET_VALUE);
     }
 
     @Override

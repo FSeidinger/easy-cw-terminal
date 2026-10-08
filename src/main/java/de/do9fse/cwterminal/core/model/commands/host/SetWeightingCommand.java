@@ -14,6 +14,6 @@ public record SetWeightingCommand(Weighting weighting) implements HostModeComman
 
     @Override
     public byte[] getPayloadBytes() {
-        return new byte[] { 0x03, (byte) weighting.percentage().getValue().intValue() };
+        return new byte[] { 0x03, (byte) weighting.toProtocolValue() };
     }
 }

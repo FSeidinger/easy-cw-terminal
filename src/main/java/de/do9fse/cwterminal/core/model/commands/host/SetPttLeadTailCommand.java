@@ -16,11 +16,21 @@ import tech.units.indriya.unit.Units;
 public record SetPttLeadTailCommand(Quantity<Time> leadIn, Quantity<Time> tail) implements HostModeCommand {
     public SetPttLeadTailCommand {
         Objects.requireNonNull(leadIn, "PTT lead-in must not be null");
+
         Objects.requireNonNull(tail, "PTT tail must not be null");
+
         final int leadInUnits = HostCommandSupport.requirePttDelay10Ms("PTT lead-in", leadIn);
+
+        leadIn = Quantities.getQuantity(
+            leadInUnits * HostCommandSupport.PTT_DELAY_STEP_MILLISECONDS,
+            MILLI(Units.SECOND)
+        );
+
         final int tailUnits = HostCommandSupport.requirePttDelay10Ms("PTT tail", tail);
-        leadIn = Quantities.getQuantity(leadInUnits * 10, MILLI(Units.SECOND));
-        tail = Quantities.getQuantity(tailUnits * 10, MILLI(Units.SECOND));
+        tail = Quantities.getQuantity(
+            tailUnits * HostCommandSupport.PTT_DELAY_STEP_MILLISECONDS,
+            MILLI(Units.SECOND)
+        );
     }
 
     @Override

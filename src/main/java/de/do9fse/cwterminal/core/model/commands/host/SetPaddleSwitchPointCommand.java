@@ -7,13 +7,13 @@ import de.do9fse.cwterminal.core.model.commands.CommandConfiguration;
 import de.do9fse.cwterminal.core.model.configuration.PaddleSetpoint;
 
 @CommandConfiguration(allowedProtocols = WinKeyProtocolVersion.V2)
-public record SetPaddleSwitchpointCommand(PaddleSetpoint setpoint) implements HostModeCommand {
-    public SetPaddleSwitchpointCommand {
-        Objects.requireNonNull(setpoint, "Paddle switchpoint must not be null");
+public record SetPaddleSwitchPointCommand(PaddleSetpoint setpoint) implements HostModeCommand {
+    public SetPaddleSwitchPointCommand {
+        Objects.requireNonNull(setpoint, "Paddle switch point must not be null");
     }
 
     @Override
     public byte[] getPayloadBytes() {
-        return new byte[] { 0x12, (byte) setpoint.percentage().getValue().intValue() };
+        return new byte[] { 0x12, (byte) setpoint.toProtocolValue() };
     }
 }

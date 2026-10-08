@@ -14,6 +14,6 @@ public record SetKeyCompensationCommand(KeyCompensation compensation) implements
 
     @Override
     public byte[] getPayloadBytes() {
-        return new byte[] { 0x11, (byte) compensation.duration().getValue().intValue() };
+        return new byte[] { 0x11, (byte) compensation.toProtocolValue() };
     }
 }

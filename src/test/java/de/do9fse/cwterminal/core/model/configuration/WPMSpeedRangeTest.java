@@ -13,9 +13,9 @@ import tech.units.indriya.quantity.Quantities;
 class WPMSpeedRangeTest {
     @Test
     void parsesUnsignedWpmRange() {
-        assertEquals(0, WPMSpeedRange.fromProtocol(0).range().getValue().intValue());
-        assertEquals(30, WPMSpeedRange.fromProtocol(30).range().getValue().intValue());
-        assertEquals(30, WPMSpeedRange.fromProtocol((byte) 30).range().getValue().intValue());
+        assertEquals(0, WPMSpeedRange.fromProtocol(0).value().getValue().intValue());
+        assertEquals(30, WPMSpeedRange.fromProtocol(30).value().getValue().intValue());
+        assertEquals(30, WPMSpeedRange.fromProtocol((byte) 30).value().getValue().intValue());
         assertThrows(IllegalArgumentException.class, () -> WPMSpeedRange.fromProtocol(100));
     }
 
@@ -23,7 +23,7 @@ class WPMSpeedRangeTest {
     void convertsRangeToWpmUnit() {
         final Quantity<Dimensionless> oneWpm = Quantities.getQuantity(1, WinKeyUnits.WPM);
 
-        assertEquals(oneWpm, new WPMSpeedRange(oneWpm).range());
+        assertEquals(oneWpm, new WPMSpeedRange(oneWpm).value());
     }
 
     @Test

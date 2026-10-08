@@ -9,14 +9,14 @@ import javax.measure.quantity.Dimensionless;
 import tech.units.indriya.ComparableQuantity;
 import tech.units.indriya.quantity.Quantities;
 
-public record WPMSpeed(Quantity<Dimensionless> wpmSpeed) {
+public record WPMSpeed(Quantity<Dimensionless> value) {
     public static final ComparableQuantity<Dimensionless> WPM_MIN = Quantities.getQuantity(5.0, WinKeyUnits.WPM);
     public static final ComparableQuantity<Dimensionless> WPM_MAX = Quantities.getQuantity(99.0, WinKeyUnits.WPM);
 
     public WPMSpeed {
-        Objects.requireNonNull(wpmSpeed, "CW Speed value must not be null");
+        Objects.requireNonNull(value, "CW Speed value must not be null");
 
-        final ComparableQuantity<Dimensionless> inWpm = WinKeyUnits.asWpm(wpmSpeed);
+        final ComparableQuantity<Dimensionless> inWpm = WinKeyUnits.asWpm(value);
 
         if (inWpm.isLessThan(WPM_MIN) || inWpm.isGreaterThan(WPM_MAX)) {
             final String message = MessageFormat.format(
@@ -25,10 +25,11 @@ public record WPMSpeed(Quantity<Dimensionless> wpmSpeed) {
                 WPM_MAX,
                 inWpm
             );
+            
             throw new IllegalArgumentException(message);
         }
 
-        wpmSpeed = inWpm;
+        value = inWpm;
     }
 
     public static WPMSpeed fromProtocol(final int value) {
@@ -36,6 +37,6 @@ public record WPMSpeed(Quantity<Dimensionless> wpmSpeed) {
     }
 
     public int toProtocolValue() {
-        return (int) Math.round(wpmSpeed.getValue().doubleValue());
+        return (int) Math.round(value.getValue().doubleValue());
     }
 }

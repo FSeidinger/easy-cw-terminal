@@ -1,5 +1,6 @@
 package de.do9fse.cwterminal.core.model.commands.host;
 
+import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.Objects;
 
@@ -12,8 +13,15 @@ public record LoadDefaultsCommand(byte[] values) implements HostModeCommand {
 
     public LoadDefaultsCommand {
         Objects.requireNonNull(values, "Default values must not be null");
+        
         if (values.length != DEFAULTS_BYTES) {
-            throw new IllegalArgumentException("Load defaults requires exactly 15 values");
+            final String message = MessageFormat.format(
+                "Load defaults requires exactly {0} values but received {1}",
+                DEFAULTS_BYTES,
+                values.length
+            );
+
+            throw new IllegalArgumentException(message);
         }
         values = Arrays.copyOf(values, values.length);
     }

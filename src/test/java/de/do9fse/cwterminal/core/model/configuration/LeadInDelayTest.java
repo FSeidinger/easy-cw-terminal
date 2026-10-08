@@ -11,8 +11,8 @@ import tech.units.indriya.unit.Units;
 class LeadInDelayTest {
     @Test
     void parsesPttLeadInInTenMillisecondUnits() {
-        assertEquals(12.0, LeadInDelay.fromProtocol(12).delay().to(MILLI(Units.SECOND)).getValue().doubleValue());
-        assertEquals(250.0, LeadInDelay.fromProtocol(250).delay().to(MILLI(Units.SECOND)).getValue().doubleValue());
+        assertEquals(12.0, LeadInDelay.fromProtocol(12).value().to(MILLI(Units.SECOND)).getValue().doubleValue());
+        assertEquals(250.0, LeadInDelay.fromProtocol(250).value().to(MILLI(Units.SECOND)).getValue().doubleValue());
     }
 
     @Test

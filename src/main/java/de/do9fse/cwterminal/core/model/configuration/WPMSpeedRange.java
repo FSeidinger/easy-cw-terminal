@@ -9,14 +9,14 @@ import javax.measure.quantity.Dimensionless;
 import tech.units.indriya.ComparableQuantity;
 import tech.units.indriya.quantity.Quantities;
 
-public record WPMSpeedRange(Quantity<Dimensionless> range) {
+public record WPMSpeedRange(Quantity<Dimensionless> value) {
     public static final ComparableQuantity<Dimensionless> RANGE_MIN = Quantities.getQuantity(0, WinKeyUnits.WPM);
     public static final ComparableQuantity<Dimensionless> RANGE_MAX = Quantities.getQuantity(99, WinKeyUnits.WPM);
 
     public WPMSpeedRange {
-        Objects.requireNonNull(range, "WPM speed range must not be null");
+        Objects.requireNonNull(value, "WPM speed range must not be null");
 
-        final ComparableQuantity<Dimensionless> inWpm = WinKeyUnits.asWpm(range);
+        final ComparableQuantity<Dimensionless> inWpm = WinKeyUnits.asWpm(value);
 
         if (inWpm.isLessThan(RANGE_MIN) || inWpm.isGreaterThan(RANGE_MAX)) {
             final String message = MessageFormat.format(
@@ -33,7 +33,7 @@ public record WPMSpeedRange(Quantity<Dimensionless> range) {
             throw new IllegalArgumentException("WPM speed range must be an integer number of WPM");
         }
 
-        range = inWpm;
+        value = inWpm;
     }
 
     public static WPMSpeedRange fromProtocol(final int value) {
@@ -41,6 +41,6 @@ public record WPMSpeedRange(Quantity<Dimensionless> range) {
     }
 
     public int toProtocolValue() {
-        return (int) Math.round(range.getValue().doubleValue());
+        return (int) Math.round(value.getValue().doubleValue());
     }
 }

@@ -8,8 +8,8 @@ import org.junit.jupiter.api.Test;
 class PaddleSetpointTest {
     @Test
     void parsesPercentageIncludingDisabledValue() {
-        assertEquals(0.0, PaddleSetpoint.fromProtocol(0).percentage().getValue().doubleValue());
-        assertEquals(55.0, PaddleSetpoint.fromProtocol(55).percentage().getValue().doubleValue());
+        assertEquals(0.0, PaddleSetpoint.fromProtocol(0).value().getValue().doubleValue());
+        assertEquals(55.0, PaddleSetpoint.fromProtocol(55).value().getValue().doubleValue());
     }
 
     @Test
