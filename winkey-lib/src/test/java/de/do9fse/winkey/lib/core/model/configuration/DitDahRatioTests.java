@@ -9,7 +9,6 @@ import java.text.MessageFormat;
 import javax.measure.Quantity;
 import javax.measure.quantity.Dimensionless;
 
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator;
 import org.junit.jupiter.api.Nested;
@@ -44,7 +43,6 @@ class DitDahRatioTests {
             assertEquals(expected, DitDahRatio.applyRatioFormula(value));
         }
 
-        @DisplayName("")
         @CsvSource({
             "1.98, 33",
             "3.00, 50",

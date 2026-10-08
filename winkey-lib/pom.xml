@@ -4,11 +4,15 @@
 
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>de.do9fse.winkey</groupId>
-    <artifactId>winkey-pom</artifactId>
-    <version>0.1.0-SNAPSHOT</version>
+    <parent>
+        <groupId>de.do9fse.winkey</groupId>
+        <artifactId>winkey-pom</artifactId>
+        <version>0.1.0-SNAPSHOT</version>
+        <relativePath>..</relativePath>
+    </parent>
 
-    <packaging>pom</packaging>
+    <groupId>de.do9fse.winkey.lib</groupId>
+    <artifactId>winkey-lib</artifactId>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -74,6 +78,55 @@
         </dependencies>
     </dependencyManagement>
 
+    <dependencies>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>io.github.classgraph</groupId>
+            <artifactId>classgraph</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.fazecast</groupId>
+            <artifactId>jSerialComm</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>tech.uom.lib</groupId>
+            <artifactId>uom-lib-common</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>javax.measure</groupId>
+            <artifactId>unit-api</artifactId>
+            <version>2.2</version>
+        </dependency>
+
+        <dependency>
+            <groupId>tech.units</groupId>
+            <artifactId>indriya</artifactId>
+        </dependency>            
+
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-junit-jupiter</artifactId>
+        </dependency>
+    </dependencies>
+
     <build>
         <pluginManagement>
             <plugins>
@@ -124,9 +177,12 @@
                 </plugin>
             </plugins>
         </pluginManagement>
-    </build>
 
-    <modules>
-        <module>winkey-lib</module>
-    </modules>
+        <plugins>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
 </project>
