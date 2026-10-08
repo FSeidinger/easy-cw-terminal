@@ -7,6 +7,7 @@ import de.do9fse.cwterminal.core.model.commands.WinKeyCommand;
 import de.do9fse.cwterminal.core.model.error.WinKeyApplicationException;
 import de.do9fse.cwterminal.core.model.error.WinKeyRuntimeException;
 import de.do9fse.cwterminal.core.model.responses.WinKeyResponse;
+import de.do9fse.cwterminal.core.port.in.WinKeyUnsolicitedResponseListener;
 
 public interface WinKeyTransport extends AutoCloseable {
     /**
@@ -26,6 +27,20 @@ public interface WinKeyTransport extends AutoCloseable {
      * @throws WinKeyRuntimeException if closing fails
      */
     void close() throws WinKeyApplicationException;
+
+    /**
+     * Registers a listener for responses sent by the device outside the active command.
+     *
+     * @param listener the listener to register
+     */
+    void addUnsolicitedResponseListener(final WinKeyUnsolicitedResponseListener listener);
+
+    /**
+     * Removes a previously registered unsolicited response listener.
+     *
+     * @param listener the listener to remove
+     */
+    void removeUnsolicitedResponseListener(final WinKeyUnsolicitedResponseListener listener);
 
     /**
      * Submits a WinKey command to the transport's job queue
