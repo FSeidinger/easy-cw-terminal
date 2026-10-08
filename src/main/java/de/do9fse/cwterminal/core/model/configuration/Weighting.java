@@ -1,29 +1,42 @@
 package de.do9fse.cwterminal.core.model.configuration;
 
+import java.text.MessageFormat;
 import java.util.Objects;
 
 import javax.measure.Quantity;
 import javax.measure.quantity.Dimensionless;
 
+import tech.units.indriya.ComparableQuantity;
 import tech.units.indriya.quantity.Quantities;
 import tech.units.indriya.unit.Units;
 
 public record Weighting(Quantity<Dimensionless> percentage) {
+    public static final ComparableQuantity<Dimensionless> PERCENT_MIN = Quantities.getQuantity(10, Units.PERCENT);
+    public static final ComparableQuantity<Dimensionless> PERCENT_MAX = Quantities.getQuantity(90, Units.PERCENT);
+
     public Weighting {
         Objects.requireNonNull(percentage, "Weighting value must not be null");
 
-        final Quantity<Dimensionless> inPercent = percentage.to(Units.PERCENT);
-        final double percentageValue = inPercent.getValue().doubleValue();
+        final ComparableQuantity<Dimensionless> inPercent = WinKeyUnits.asPercent(percentage);
 
-        if (percentageValue < 10 || percentageValue > 90) {
-            throw new IllegalArgumentException("Weighting percentage must be between 10 % and 90 %");
+        if (inPercent.isLessThan(PERCENT_MIN) || inPercent.isGreaterThan(PERCENT_MAX)) {
+            final String message = MessageFormat.format(
+                "Weighting must be between {0} and {1} but was {2}",
+                PERCENT_MIN,
+                PERCENT_MAX,
+                inPercent
+            );
+            throw new IllegalArgumentException(message);
         }
 
         percentage = inPercent;
     }
 
-    public static Weighting parseResponseByte(final int responseByte) {
-        final int percentage = responseByte & 0xff;
-        return new Weighting(Quantities.getQuantity(percentage, Units.PERCENT));
+    public static Weighting fromProtocol(final int value) {
+        return new Weighting(Quantities.getQuantity(value & 0xff, Units.PERCENT));
+    }
+
+    public int toProtocolValue() {
+        return (int) Math.round(percentage.getValue().doubleValue());
     }
 }

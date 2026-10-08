@@ -1,5 +1,7 @@
 package de.do9fse.cwterminal.core.model.configuration;
 
+import java.util.Objects;
+
 public record PinConfiguration(
     boolean isPttEnabled,
     boolean isSidetoneEnabled,
@@ -22,8 +24,13 @@ public record PinConfiguration(
         TWO_LETTERSPACES
     }
 
-    public static PinConfiguration parseResponseByte(final int responseByte) {
-        final int pinConfiguration = responseByte & 0xff;
+    public PinConfiguration {
+        Objects.requireNonNull(ultimaticPriority, "Ultimatic priority must not be null");
+        Objects.requireNonNull(paddleHangTime, "Paddle hang time must not be null");
+    }
+
+    public static PinConfiguration fromProtocol(final int value) {
+        final int pinConfiguration = value & 0xff;
         final int priorityCode = (pinConfiguration >>> 6) & 0b11;
         final int hangTimeCode = (pinConfiguration >>> 4) & 0b11;
 
@@ -35,5 +42,14 @@ public record PinConfiguration(
             UltimaticPriority.values()[priorityCode],
             PaddleHangTime.values()[hangTimeCode]
         );
+    }
+
+    public int toProtocolValue() {
+        return (isPttEnabled ? 0x01 : 0)
+            | (isSidetoneEnabled ? 0x02 : 0)
+            | (isKeyOutput2Enabled ? 0x04 : 0)
+            | (isKeyOutput1Enabled ? 0x08 : 0)
+            | (paddleHangTime.ordinal() << 4)
+            | (ultimaticPriority.ordinal() << 6);
     }
 }

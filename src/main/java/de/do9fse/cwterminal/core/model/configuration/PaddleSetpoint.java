@@ -1,29 +1,45 @@
 package de.do9fse.cwterminal.core.model.configuration;
 
+import java.text.MessageFormat;
 import java.util.Objects;
 
 import javax.measure.Quantity;
 import javax.measure.quantity.Dimensionless;
 
+import tech.units.indriya.ComparableQuantity;
 import tech.units.indriya.quantity.Quantities;
 import tech.units.indriya.unit.Units;
 
 public record PaddleSetpoint(Quantity<Dimensionless> percentage) {
+    public static final ComparableQuantity<Dimensionless> PERCENT_MIN = Quantities.getQuantity(10, Units.PERCENT);
+    public static final ComparableQuantity<Dimensionless> PERCENT_MAX = Quantities.getQuantity(90, Units.PERCENT);
+    public static final ComparableQuantity<Dimensionless> DISABLED = Quantities.getQuantity(0, Units.PERCENT);
+
     public PaddleSetpoint {
         Objects.requireNonNull(percentage, "Paddle setpoint must not be null");
 
-        final Quantity<Dimensionless> inPercent = percentage.to(Units.PERCENT);
+        final ComparableQuantity<Dimensionless> inPercent = WinKeyUnits.asPercent(percentage);
         final double percentageValue = inPercent.getValue().doubleValue();
 
-        if (percentageValue != 0 && (percentageValue < 10 || percentageValue > 90)) {
-            throw new IllegalArgumentException("Paddle setpoint must be 0 or between 10% and 90%");
+        if (percentageValue != 0 && (inPercent.isLessThan(PERCENT_MIN) || inPercent.isGreaterThan(PERCENT_MAX))) {
+            final String message = MessageFormat.format(
+                "Paddle setpoint must be {0} or between {1} and {2} but was {3}",
+                DISABLED,
+                PERCENT_MIN,
+                PERCENT_MAX,
+                inPercent
+            );
+            throw new IllegalArgumentException(message);
         }
 
         percentage = inPercent;
     }
 
-    public static PaddleSetpoint parseResponseByte(final int responseByte) {
-        final int percentage = responseByte & 0xff;
-        return new PaddleSetpoint(Quantities.getQuantity(percentage, Units.PERCENT));
+    public static PaddleSetpoint fromProtocol(final int value) {
+        return new PaddleSetpoint(Quantities.getQuantity(value & 0xff, Units.PERCENT));
+    }
+
+    public int toProtocolValue() {
+        return (int) Math.round(percentage.getValue().doubleValue());
     }
 }

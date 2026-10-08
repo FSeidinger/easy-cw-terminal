@@ -1,27 +1,42 @@
 package de.do9fse.cwterminal.core.model.configuration;
 
+import java.text.MessageFormat;
 import java.util.Objects;
 
 import javax.measure.Quantity;
 import javax.measure.quantity.Dimensionless;
 
+import tech.units.indriya.ComparableQuantity;
 import tech.units.indriya.quantity.Quantities;
 
-public record FarnsworthSpeed(Quantity<Dimensionless> wpmSpeed) {
-    public FarnsworthSpeed {
-        Objects.requireNonNull(wpmSpeed, "Farnsworth speed must not be null");
+public record FarnsworthSpeed(Quantity<Dimensionless> value) {
+    public static final ComparableQuantity<Dimensionless> WPM_MIN = Quantities.getQuantity(10.0, WinKeyUnits.WPM);
+    public static final ComparableQuantity<Dimensionless> WPM_MAX = Quantities.getQuantity(99.0, WinKeyUnits.WPM);
 
-        final Quantity<Dimensionless> inWpm = wpmSpeed.to(WinKeyUnits.WPM);
-        final double speedValue = inWpm.getValue().doubleValue();
-        if (speedValue != 0 && (speedValue < 10 || speedValue > 99)) {
-            throw new IllegalArgumentException("Farnsworth speed must be 0 or between 10 WPM and 99 WPM");
+    public FarnsworthSpeed {
+        Objects.requireNonNull(value, "Farnsworth speed must not be null");
+
+        final ComparableQuantity<Dimensionless> wpmSpeed = WinKeyUnits.asWpm(value);
+
+        if (wpmSpeed.isLessThan(WPM_MIN) || wpmSpeed.isGreaterThan(WPM_MAX)) {
+            final String message = MessageFormat.format(
+                "Farnsworth speed must be between {0} and {1} but was {2}",
+                WPM_MIN,
+                WPM_MAX,
+                wpmSpeed
+            );
+
+            throw new IllegalArgumentException(message);
         }
 
-        wpmSpeed = inWpm;
+        value = wpmSpeed;
     }
 
-    public static FarnsworthSpeed parseResponseByte(final int responseByte) {
-        final int unsignedResponseByte = responseByte & 0xff;
-        return new FarnsworthSpeed(Quantities.getQuantity(unsignedResponseByte, WinKeyUnits.WPM));
+    public static FarnsworthSpeed fromProtocol(final int value) {
+        return new FarnsworthSpeed(Quantities.getQuantity(value, WinKeyUnits.WPM));
+    }
+
+    public int toProtocolValue() {
+        return (int) Math.round(value.getValue().doubleValue());
     }
 }

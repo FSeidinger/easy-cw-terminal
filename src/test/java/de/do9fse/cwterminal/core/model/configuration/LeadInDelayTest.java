@@ -11,12 +11,17 @@ import tech.units.indriya.unit.Units;
 class LeadInDelayTest {
     @Test
     void parsesPttLeadInInTenMillisecondUnits() {
-        assertEquals(12.0, LeadInDelay.parseResponseByte(12).delay().to(MILLI(Units.SECOND)).getValue().doubleValue());
-        assertEquals(250.0, LeadInDelay.parseResponseByte(250).delay().to(MILLI(Units.SECOND)).getValue().doubleValue());
+        assertEquals(12.0, LeadInDelay.fromProtocol(12).delay().to(MILLI(Units.SECOND)).getValue().doubleValue());
+        assertEquals(250.0, LeadInDelay.fromProtocol(250).delay().to(MILLI(Units.SECOND)).getValue().doubleValue());
     }
 
     @Test
     void rejectsOutOfRangeResponseValue() {
-        assertThrows(IllegalArgumentException.class, () -> LeadInDelay.parseResponseByte(251));
+        assertThrows(IllegalArgumentException.class, () -> LeadInDelay.fromProtocol(251));
+    }
+
+    @Test
+    void encodesDelayAsProtocolValue() {
+        assertEquals(12, LeadInDelay.fromProtocol(12).toProtocolValue());
     }
 }

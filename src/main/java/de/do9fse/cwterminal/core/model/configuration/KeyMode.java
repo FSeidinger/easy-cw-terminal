@@ -23,8 +23,8 @@ public enum KeyMode {
         return description;
     }
 
-    public static KeyMode parseResponseByte(final int responseByte) {
-        final int responseCode = ((responseByte & 0xff) & 0b00110000) >> 4;
+    public static KeyMode fromProtocol(final int value) {
+        final int responseCode = ((value & 0xff) & 0b00110000) >> 4;
 
         return switch (responseCode) {
             case 0 -> IAMBIC_B;
@@ -33,5 +33,9 @@ public enum KeyMode {
             case 3 -> BUG_MODE;
             default -> throw new IllegalArgumentException("Unsupported key mode: " + responseCode);
         };
+    }
+
+    public int toProtocolValue() {
+        return ordinal() << 4;
     }
 }

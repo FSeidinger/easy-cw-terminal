@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test;
 class PinConfigurationTest {
     @Test
     void parsesPinFlagsPriorityAndHangTime() {
-        final PinConfiguration pins = PinConfiguration.parseResponseByte(0b10011011);
+        final PinConfiguration pins = PinConfiguration.fromProtocol(0b10011011);
 
         assertTrue(pins.isPttEnabled());
         assertTrue(pins.isSidetoneEnabled());
@@ -17,5 +17,6 @@ class PinConfigurationTest {
         assertTrue(pins.isKeyOutput1Enabled());
         assertEquals(PinConfiguration.UltimaticPriority.DIT, pins.ultimaticPriority());
         assertEquals(PinConfiguration.PaddleHangTime.ONE_AND_ONE_THIRD_LETTERSPACES, pins.paddleHangTime());
+        assertEquals(0b10011011, pins.toProtocolValue());
     }
 }

@@ -8,11 +8,16 @@ import org.junit.jupiter.api.Test;
 class WeightingTest {
     @Test
     void parsesPercentage() {
-        assertEquals(50.0, Weighting.parseResponseByte(50).percentage().getValue().doubleValue());
+        assertEquals(50.0, Weighting.fromProtocol(50).percentage().getValue().doubleValue());
     }
 
     @Test
     void rejectsValuesOutsideSupportedRange() {
-        assertThrows(IllegalArgumentException.class, () -> Weighting.parseResponseByte(0));
+        assertThrows(IllegalArgumentException.class, () -> Weighting.fromProtocol(0));
+    }
+
+    @Test
+    void convertsPercentageToProtocolValue() {
+        assertEquals(50, Weighting.fromProtocol(50).toProtocolValue());
     }
 }

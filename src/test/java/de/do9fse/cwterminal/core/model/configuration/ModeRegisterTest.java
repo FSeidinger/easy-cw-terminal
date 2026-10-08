@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test;
 class ModeRegisterTest {
     @Test
     void parsesModeFlagsAndKeyMode() {
-        final ModeRegister modeRegister = ModeRegister.parseResponseByte(0xff);
+        final ModeRegister modeRegister = ModeRegister.fromProtocol(0xff);
 
         assertFalse(modeRegister.isPaddleWatchdogEnabled());
         assertTrue(modeRegister.isPaddleEchobackEnabled());
@@ -22,7 +22,14 @@ class ModeRegisterTest {
 
     @Test
     void treatsWatchdogBitAsDisableFlagAndSupportsSignedBytes() {
-        assertFalse(ModeRegister.parseResponseByte((byte) 0x80).isPaddleWatchdogEnabled());
-        assertTrue(ModeRegister.parseResponseByte(0).isPaddleWatchdogEnabled());
+        assertFalse(ModeRegister.fromProtocol((byte) 0x80).isPaddleWatchdogEnabled());
+        assertTrue(ModeRegister.fromProtocol(0).isPaddleWatchdogEnabled());
+    }
+
+    @Test
+    void convertsModeFlagsAndKeyModeToProtocolBits() {
+        final ModeRegister modeRegister = new ModeRegister(true, true, KeyMode.BUG_MODE, true, true, true, true);
+        assertEquals(0x7f, modeRegister.toProtocolValue());
+        assertEquals(0xff, ModeRegister.fromProtocol(0xff).toProtocolValue());
     }
 }

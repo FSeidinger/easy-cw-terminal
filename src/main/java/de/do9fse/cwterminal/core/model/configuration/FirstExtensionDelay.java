@@ -2,30 +2,46 @@ package de.do9fse.cwterminal.core.model.configuration;
 
 import static javax.measure.MetricPrefix.MILLI;
 
+import java.text.MessageFormat;
 import java.util.Objects;
 
 import javax.measure.Quantity;
 import javax.measure.quantity.Time;
 
+import tech.units.indriya.ComparableQuantity;
 import tech.units.indriya.quantity.Quantities;
 import tech.units.indriya.unit.Units;
 
 public record FirstExtensionDelay(Quantity<Time> delay) {
+    public static final ComparableQuantity<Time> DELAY_MIN = Quantities.getQuantity(0, MILLI(Units.SECOND));
+    public static final ComparableQuantity<Time> DELAY_MAX = Quantities.getQuantity(250, MILLI(Units.SECOND));
+
     public FirstExtensionDelay {
         Objects.requireNonNull(delay, "First extension delay must not be null");
 
-        final Quantity<Time> inMS = delay.to(MILLI(Units.SECOND));
-        final double mS = inMS.getValue().doubleValue();
+        final ComparableQuantity<Time> inMilliseconds = WinKeyUnits.asMilliseconds(delay);
 
-        if (mS < 0 || mS > 250) {
-            throw new IllegalArgumentException("First extension delay must be between 0 mS and 250 mS");
+        if (inMilliseconds.isLessThan(DELAY_MIN) || inMilliseconds.isGreaterThan(DELAY_MAX)) {
+            final String message = MessageFormat.format(
+                "First extension delay must be between {0} and {1} but was {2}",
+                DELAY_MIN,
+                DELAY_MAX,
+                inMilliseconds
+            );
+
+            throw new IllegalArgumentException(message);
         }
 
-        delay = inMS;
+        delay = inMilliseconds;
     }
 
-    public static FirstExtensionDelay parseResponseByte(final int responseByte) {
-        final int delayInMilliseconds = responseByte & 0xff;
+    public static FirstExtensionDelay fromProtocol(final int value) {
+        final int delayInMilliseconds = value & 0xff;
         return new FirstExtensionDelay(Quantities.getQuantity(delayInMilliseconds, MILLI(Units.SECOND)));
     }
+
+    public int toProtocolValue() {
+        return (int) Math.round(delay.getValue().doubleValue());
+    }
+
 }
