@@ -4,8 +4,8 @@
 
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>de.do9fse.easy-cw-terminal</groupId>
-    <artifactId>easy-cw-terminal</artifactId>
+    <groupId>de.do9fse.winkey.lib</groupId>
+    <artifactId>winkey-lib</artifactId>
     <version>0.1.0-SNAPSHOT</version>
 
     <properties>
