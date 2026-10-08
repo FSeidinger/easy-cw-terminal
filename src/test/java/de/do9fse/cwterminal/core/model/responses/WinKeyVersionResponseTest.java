@@ -29,7 +29,15 @@ class WinKeyVersionResponseTest {
             () -> new WinKeyVersionResponse(majorVersion, 0)
         );
 
-        assertEquals("Unsupported WinKey major version: " + majorVersion, exception.getMessage());
+        assertEquals(
+            "WinKey major version must be between "
+                + WinKeyVersionResponse.MAJOR_VERSION_MIN
+                + " and "
+                + WinKeyVersionResponse.MAJOR_VERSION_MAX
+                + " but was "
+                + majorVersion,
+            exception.getMessage()
+        );
     }
 
     @Test
@@ -40,7 +48,12 @@ class WinKeyVersionResponseTest {
             () -> new WinKeyVersionResponse(2, -1)
         );
 
-        assertEquals("Minor version must not be negative: -1", exception.getMessage());
+        assertEquals(
+            "Minor version must not be less than "
+                + WinKeyVersionResponse.MINOR_VERSION_MIN
+                + " but was -1",
+            exception.getMessage()
+        );
     }
 
     @Test
@@ -56,7 +69,7 @@ class WinKeyVersionResponseTest {
     @Test
     @DisplayName("Test that response byte can be parsed")
     void parsesResponseByte() {
-        final WinKeyVersionResponse version = WinKeyVersionResponse.parseResponse(new byte[] { 23 });
+        final WinKeyVersionResponse version = WinKeyVersionResponse.fromProtocol(new byte[] { 23 });
 
         assertEquals(2, version.majorVersion());
         assertEquals(3, version.minorVersion());

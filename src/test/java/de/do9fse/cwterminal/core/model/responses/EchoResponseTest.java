@@ -10,7 +10,7 @@ class EchoResponseTest {
 
     @Test
     void parsesEchoedCharacter() {
-        final EchoResponse response = EchoResponse.parseResponse(new byte[] { (byte) 'K' });
+        final EchoResponse response = EchoResponse.fromProtocol(new byte[] { (byte) 'K' });
 
         assertEquals('K', response.echoChar());
     }

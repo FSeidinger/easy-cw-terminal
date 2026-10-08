@@ -34,22 +34,22 @@ public record DefaultsResponse(
     PinConfiguration pinConfiguration,
     int reservedValue
 ) implements WinKeyResponse {
-    public static DefaultsResponse parseResponse(final byte[] responseBytes) {
+    public static DefaultsResponse fromProtocol(final byte[] responseBytes) {
         return new DefaultsResponse(
-            ModeRegister.parseResponseByte(responseBytes[0]),
-            WPMSpeed.parseResponseByte(responseBytes[1]),
+            ModeRegister.fromProtocol(responseBytes[0]),
+            WPMSpeed.fromProtocol(responseBytes[1]),
             SideToneFrequency.parseResponseByte(responseBytes[2]),
-            Weighting.parseResponseByte(responseBytes[3]),
-            LeadInDelay.parseResponseByte(responseBytes[4]),
-            TailDelay.parseResponseByte(responseBytes[5]),
-            WPMSpeed.parseResponseByte(responseBytes[6]),
-            WPMSpeedRange.parseResponseByte(responseBytes[7]),
-            FirstExtensionDelay.parseResponseByte(responseBytes[8]),
-            KeyCompensation.parseResponseByte(responseBytes[9]),
-            FarnsworthSpeed.parseResponseByte(responseBytes[10]),
-            PaddleSetpoint.parseResponseByte(responseBytes[11]),
-            DitDahRatio.parseResponseByte(responseBytes[12]),
-            PinConfiguration.parseResponseByte(responseBytes[13]),
+            Weighting.fromProtocol(responseBytes[3]),
+            LeadInDelay.fromProtocol(responseBytes[4]),
+            TailDelay.fromProtocol(responseBytes[5]),
+            WPMSpeed.fromProtocol(responseBytes[6]),
+            WPMSpeedRange.fromProtocol(responseBytes[7]),
+            FirstExtensionDelay.fromProtocol(responseBytes[8]),
+            KeyCompensation.fromProtocol(responseBytes[9]),
+            FarnsworthSpeed.fromProtocol(responseBytes[10]),
+            PaddleSetpoint.fromProtocol(responseBytes[11]),
+            DitDahRatio.fromProtocol(responseBytes[12]),
+            PinConfiguration.fromProtocol(responseBytes[13]),
             responseBytes[14] & 0xff
         );
     }

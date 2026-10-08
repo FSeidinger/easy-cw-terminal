@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test;
 class WinKeyStatusResponseTest {
     @Test
     void parsesWk1CompatibleStatusFields() {
-        final WinKeyStatusResponse response = WinKeyStatusResponse.parseResponse(new byte[] { (byte) 0xdf });
+        final WinKeyStatusResponse response = WinKeyStatusResponse.fromProtocol(new byte[] { (byte) 0xdf });
 
         assertTrue(response.waiting());
         assertTrue(response.keyDown());
@@ -23,7 +23,7 @@ class WinKeyStatusResponseTest {
 
     @Test
     void parsesWk2StatusAndPushButtonFieldsWhenConfigured() {
-        final WinKeyStatusResponse statusResponse = WinKeyStatusResponse.parseResponse(
+        final WinKeyStatusResponse statusResponse = WinKeyStatusResponse.fromProtocol(
             new byte[] { (byte) 0xd7 },
             true
         );
@@ -34,7 +34,7 @@ class WinKeyStatusResponseTest {
         assertTrue(statusResponse.xoff());
         assertFalse(statusResponse.pushButtonStatus());
 
-        final WinKeyStatusResponse buttonResponse = WinKeyStatusResponse.parseResponse(
+        final WinKeyStatusResponse buttonResponse = WinKeyStatusResponse.fromProtocol(
             new byte[] { (byte) 0xdf },
             true
         );
@@ -49,7 +49,7 @@ class WinKeyStatusResponseTest {
     void rejectsStatusBytesWithoutTheProtocolTag() {
         assertThrows(
             IllegalArgumentException.class,
-            () -> WinKeyStatusResponse.parseResponse(new byte[] { 0x7f })
+            () -> WinKeyStatusResponse.fromProtocol(new byte[] { 0x7f })
         );
     }
 }

@@ -26,7 +26,8 @@
         "ULTIMATIC",
         "Unreading",
         "WinKey",
-        "Winkeyer"
+        "Winkeyer",
+        "xoff"
     ],
 
     "java.configuration.updateBuildConfiguration": "interactive",

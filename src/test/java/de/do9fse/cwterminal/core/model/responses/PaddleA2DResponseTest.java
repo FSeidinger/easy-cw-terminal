@@ -21,7 +21,7 @@ class PaddleA2DResponseTest {
         "255, BOTH_PADDLES_UP"
     })
     void parsesAdcValueIntoPaddleState(final int adcValue, final PaddleA2DResponse.PaddleA2DState expectedState) {
-        final PaddleA2DResponse response = PaddleA2DResponse.parseResponse(new byte[] { (byte) adcValue });
+        final PaddleA2DResponse response = PaddleA2DResponse.fromProtocol(new byte[] { (byte) adcValue });
 
         assertEquals(expectedState, response.state());
     }

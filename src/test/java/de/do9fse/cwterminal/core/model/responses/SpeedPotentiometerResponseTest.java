@@ -10,7 +10,7 @@ class SpeedPotentiometerResponseTest {
 
     @Test
     void parsesResponseByteAsUnsignedValue() {
-        final SpeedPotentiometerResponse response = SpeedPotentiometerResponse.parseResponse(
+        final SpeedPotentiometerResponse response = SpeedPotentiometerResponse.fromProtocol(
             new byte[] { (byte) 0x80 }
         );
 

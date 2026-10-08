@@ -10,7 +10,7 @@ class CalibrationValueResponseTest {
 
     @Test
     void parsesResponseByteAsUnsignedValue() {
-        final CalibrationValueResponse response = CalibrationValueResponse.parseResponse(new byte[] { (byte) 0xff });
+        final CalibrationValueResponse response = CalibrationValueResponse.fromProtocol(new byte[] { (byte) 0xff });
 
         assertEquals(255, response.value());
     }

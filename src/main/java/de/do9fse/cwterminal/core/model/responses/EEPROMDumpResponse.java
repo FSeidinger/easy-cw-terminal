@@ -1,12 +1,24 @@
 package de.do9fse.cwterminal.core.model.responses;
 
+import java.text.MessageFormat;
 import java.util.Arrays;
+import java.util.Objects;
 
-@ResponseConfiguration(expectedResponseBytes = 256)
+@ResponseConfiguration(expectedResponseBytes = EEPROMDumpResponse.DATA_LENGTH)
 public record EEPROMDumpResponse(byte[] data) implements WinKeyResponse {
+    public static final int DATA_LENGTH = 256;
+
     public EEPROMDumpResponse {
-        if (data.length != 256) {
-            throw new IllegalArgumentException("EEPROM dump must contain exactly 256 bytes");
+        Objects.requireNonNull(data, "EEPROM dump data must not be null");
+
+        if (data.length != DATA_LENGTH) {
+            final String message = MessageFormat.format(
+                "EEPROM dump must contain exactly {0} bytes but contained {1}",
+                DATA_LENGTH,
+                data.length
+            );
+        
+            throw new IllegalArgumentException(message);
         }
         
         data = Arrays.copyOf(data, data.length);
@@ -17,7 +29,7 @@ public record EEPROMDumpResponse(byte[] data) implements WinKeyResponse {
         return Arrays.copyOf(data, data.length);
     }
 
-    public static EEPROMDumpResponse parseResponse(final byte[] responseBytes) {
+    public static EEPROMDumpResponse fromProtocol(final byte[] responseBytes) {
         return new EEPROMDumpResponse(responseBytes);
     }
 }

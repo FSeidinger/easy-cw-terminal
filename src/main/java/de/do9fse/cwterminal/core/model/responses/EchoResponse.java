@@ -4,7 +4,7 @@ package de.do9fse.cwterminal.core.model.responses;
     expectedResponseBytes = 1
 )
 public record EchoResponse(char echoChar) implements WinKeyResponse {
-    public static EchoResponse parseResponse(final byte[] responseBytes) {
+    public static EchoResponse fromProtocol(final byte[] responseBytes) {
         return new EchoResponse((char) responseBytes[0]);
     }
 }

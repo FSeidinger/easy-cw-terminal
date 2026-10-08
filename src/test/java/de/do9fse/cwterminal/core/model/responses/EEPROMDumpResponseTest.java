@@ -17,7 +17,7 @@ class EEPROMDumpResponseTest {
         responseBytes[0] = 0x12;
         responseBytes[255] = (byte) 0xff;
 
-        final EEPROMDumpResponse response = EEPROMDumpResponse.parseResponse(responseBytes);
+        final EEPROMDumpResponse response = EEPROMDumpResponse.fromProtocol(responseBytes);
 
         assertArrayEquals(responseBytes, response.data());
     }
@@ -42,9 +42,22 @@ class EEPROMDumpResponseTest {
 
         final IllegalArgumentException exception = assertThrows(
             IllegalArgumentException.class,
-            () -> EEPROMDumpResponse.parseResponse(responseBytes)
+            () -> EEPROMDumpResponse.fromProtocol(responseBytes)
         );
 
-        assertEquals("EEPROM dump must contain exactly 256 bytes", exception.getMessage());
+        assertEquals(
+            "EEPROM dump must contain exactly " + EEPROMDumpResponse.DATA_LENGTH + " bytes but contained 255",
+            exception.getMessage()
+        );
+    }
+
+    @Test
+    void rejectsNullData() {
+        final NullPointerException exception = assertThrows(
+            NullPointerException.class,
+            () -> new EEPROMDumpResponse(null)
+        );
+
+        assertEquals("EEPROM dump data must not be null", exception.getMessage());
     }
 }

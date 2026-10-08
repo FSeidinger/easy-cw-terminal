@@ -1,8 +1,9 @@
 package de.do9fse.cwterminal.core.model.responses;
 
+import java.text.MessageFormat;
+
 @ResponseConfiguration(expectedResponseBytes = 1)
 public record WinKeyStatusResponse(
-    int rawValue,
     boolean waiting,
     boolean keyDown,
     boolean busy,
@@ -11,22 +12,28 @@ public record WinKeyStatusResponse(
     boolean pushButtonStatus,
     int pushButtonMask
 ) implements WinKeyResponse {
-    public static WinKeyStatusResponse parseResponse(final byte[] responseBytes) {
-        return parseResponse(responseBytes, false);
+    private static final int RESPONSE_TAG_MASK = 0b11100000;
+    private static final int RESPONSE_TAG = 0b11000000;
+
+    public static WinKeyStatusResponse fromProtocol(final byte[] responseBytes) {
+        return fromProtocol(responseBytes, false);
     }
 
-    public static WinKeyStatusResponse parseResponse(final byte[] responseBytes, final boolean wk2Mode) {
+    public static WinKeyStatusResponse fromProtocol(final byte[] responseBytes, final boolean wk2Mode) {
         final int value = Byte.toUnsignedInt(responseBytes[0]);
-        if ((value & 0b11100000) != 0b11000000) {
-            throw new IllegalArgumentException("Invalid WinKey status byte: " + value);
+
+        if ((value & RESPONSE_TAG_MASK) != RESPONSE_TAG) {
+            throw new IllegalArgumentException(
+                MessageFormat.format("Invalid WinKey status byte: {0}", value)
+            );
         }
 
         final boolean isPushButtonStatus = wk2Mode && (value & 0b00001000) != 0;
         final int pushButtonMask = isPushButtonStatus
             ? ((value & 0b00010000) != 0 ? 0b1000 : 0) | (value & 0b00000111)
             : 0;
+
         return new WinKeyStatusResponse(
-            value,
             !isPushButtonStatus && (value & 0b00010000) != 0,
             !wk2Mode && (value & 0b00001000) != 0,
             !isPushButtonStatus && (value & 0b00000100) != 0,

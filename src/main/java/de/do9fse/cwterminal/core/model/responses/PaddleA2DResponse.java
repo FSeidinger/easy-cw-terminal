@@ -9,7 +9,7 @@ public record PaddleA2DResponse(PaddleA2DState state) implements WinKeyResponse 
         BOTH_PADDLES_DOWN
     }
 
-    public static PaddleA2DResponse parseResponse(final byte[] responseBytes) {
+    public static PaddleA2DResponse fromProtocol(final byte[] responseBytes) {
         final Integer adcValue = Byte.toUnsignedInt(responseBytes[0]);
         
         final PaddleA2DState state = switch(adcValue) {

@@ -33,7 +33,7 @@ class DefaultResponseTest {
         responseBytes[13] = (byte) 0b10011011;
         responseBytes[14] = (byte) 0xff;
 
-        final DefaultsResponse response = DefaultsResponse.parseResponse(responseBytes);
+        final DefaultsResponse response = DefaultsResponse.fromProtocol(responseBytes);
 
         assertEquals(KeyMode.BUG_MODE, response.mode().keyMode());
         assertEquals(25.0, response.wpmSpeed().wpmSpeed().getValue().doubleValue());
@@ -43,9 +43,9 @@ class DefaultResponseTest {
         assertEquals(25.0, delayInMilliseconds(response.tailDelay().delay()));
         assertEquals(50.0, delayInMilliseconds(response.firstExtensionDelay().delay()));
         assertEquals(7.0, delayInMilliseconds(response.keyCompensation().duration()));
-        assertEquals(18.0, response.farnsworthSpeed().wpmSpeed().getValue().doubleValue());
+        assertEquals(18.0, response.farnsworthSpeed().value().getValue().doubleValue());
         assertEquals(55.0, response.paddleSetpoint().percentage().getValue().doubleValue());
-        assertEquals(3.0, response.ditDahRatio().ratio().getValue().doubleValue());
+        assertEquals(3.0, response.ditDahRatio().value().getValue().doubleValue());
         assertEquals(PinConfiguration.UltimaticPriority.DIT, response.pinConfiguration().ultimaticPriority());
         assertEquals(255, response.reservedValue());
     }
