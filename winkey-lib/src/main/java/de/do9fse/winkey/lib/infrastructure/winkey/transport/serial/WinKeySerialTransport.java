@@ -6,6 +6,7 @@ import java.io.PushbackInputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.text.MessageFormat;
+import java.time.Instant;
 import java.util.HexFormat;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -20,10 +21,12 @@ import org.slf4j.LoggerFactory;
 import com.fazecast.jSerialComm.SerialPort;
 import com.fazecast.jSerialComm.SerialPortTimeoutException;
 
+import de.do9fse.winkey.lib.core.model.ApplicationContext;
 import de.do9fse.winkey.lib.core.model.WinKeyJob;
+import de.do9fse.winkey.lib.core.model.WinKeyState;
 import de.do9fse.winkey.lib.core.model.commands.CommandInfo;
 import de.do9fse.winkey.lib.core.model.commands.WinKeyCommand;
-import de.do9fse.winkey.lib.core.model.commands.admin.HostOpenCommand;
+import de.do9fse.winkey.lib.core.model.commands.admin.EchoTestCommand;
 import de.do9fse.winkey.lib.core.model.commands.admin.SetWK1ModeCommand;
 import de.do9fse.winkey.lib.core.model.commands.admin.SetWK2ModeCommand;
 import de.do9fse.winkey.lib.core.model.error.WinKeyApplicationException;
@@ -34,6 +37,7 @@ import de.do9fse.winkey.lib.core.model.responses.SpeedPotValueResponse;
 import de.do9fse.winkey.lib.core.model.responses.WinKeyResponse;
 import de.do9fse.winkey.lib.core.model.responses.WinKeyStatusResponse;
 import de.do9fse.winkey.lib.core.port.in.WinKeyUnsolicitedResponseListener;
+import de.do9fse.winkey.lib.core.port.out.WinKeyJobQueue;
 import de.do9fse.winkey.lib.core.port.out.WinKeyTransport;
 
 public class WinKeySerialTransport implements WinKeyTransport {
@@ -51,19 +55,22 @@ public class WinKeySerialTransport implements WinKeyTransport {
     private PushbackInputStream inputStream;
     private OutputStream outputStream;
 
+    private volatile ApplicationContext context;
+
     private volatile boolean wk2StatusMode;
 
     private final HexFormat formatter = HexFormat.of().withPrefix("0x").withSuffix(" ");
 
-    public WinKeySerialTransport(final SerialPort serialPort) {
+    public WinKeySerialTransport(final ApplicationContext context, final WinKeyJobQueue jobQueue, final SerialPort serialPort) {
+        this.context = Objects.requireNonNull(context, "Application context must not be null");
+        this.jobQueue = Objects.requireNonNull(jobQueue, "Job queue must not be null");
         this.serialPort = Objects.requireNonNull(serialPort, "Serial port must not be null");
-        this.jobQueue = new WinKeyJobQueue();
     }
 
     @Override
     public void open() throws WinKeyApplicationException {
-        if (this.serialPort.isOpen()) {
-            throw new WinKeyApplicationException("Serial port is already open");
+        if (context.getState() != WinKeyState.CLOSED) {
+            throw new IllegalStateException("Transport is already initializing or ready");
         }
         
         this.serialPort.openPort();
@@ -72,47 +79,63 @@ public class WinKeySerialTransport implements WinKeyTransport {
         this.inputStream = new PushbackInputStream(serialPort.getInputStream());
         this.outputStream = serialPort.getOutputStream();
 
-        startSerialPortReaderThread();
-
-        final CompletableFuture<WinKeyResponse> jobResult = new CompletableFuture<WinKeyResponse>();
-        final WinKeyCommand command = new HostOpenCommand();
-        final WinKeyJob job = this.submitJob(command, jobResult, false);
-
-        int maxRetries = 10;
-        for (int retries = 0; retries < maxRetries; retries++) {
-            this.sendCommand(job);
-
-            try {
-                final WinKeyResponse version = jobResult.get(1, TimeUnit.SECONDS);
-                LOGGER.info("Received version {}", version);
-
-                // Signal that initializing attempts were successful
-                break;
-            } catch (final ExecutionException e) {
-                throw new WinKeyRuntimeException("Failed to initialize device", e.getCause());
-            } catch (final TimeoutException | InterruptedException e) {
-                final int retriesLeft = maxRetries - retries - 1;
-                if (retriesLeft < 1) {
-                    throw new WinKeyRuntimeException("Failed to initialize device after " + maxRetries + " attempts");
-                }
-
-                LOGGER.debug("#{} initializing attempts left", retriesLeft);
-            }
-        }
-
-        LOGGER.info("Successfully opened and initialized device");
+        context.transitionToState(WinKeyState.INITIALIZING);
     }
 
     @Override
     public void close() throws WinKeyApplicationException {
-        if (!serialPort.isOpen()) {
-            throw new WinKeyApplicationException("Serial port is not open");
+        if (context.getState() != WinKeyState.READY && context.getState() != WinKeyState.INITIALIZING) {
+            throw new IllegalStateException("Transport is already closed");
         }
 
-        stopSerialReaderThread();
-        serialPort.closePort();
+        if (context.getState() == WinKeyState.READY) {
+            stopSerialReaderThread();
+        }
 
-        LOGGER.info("Successfully closed transport");
+        serialPort.closePort();
+        context.transitionToState(WinKeyState.CLOSED);
+    }
+
+    @Override
+    public void initialize(final long timeout, final TimeUnit unit) throws TimeoutException, WinKeyRuntimeException {
+        if (context.getState() != WinKeyState.INITIALIZING) {
+            throw new IllegalStateException("Transport is ready or closed");
+        }
+
+        Objects.requireNonNull(unit, "Time unit must not be null");
+
+        if (timeout < 1) {
+            throw new IllegalArgumentException(formatError("The timeout must be greater than zero, but was {0}", timeout));
+        }
+
+        final Instant now = Instant.now();
+        final Instant responseDeadline = now.plus(timeout, unit.toChronoUnit());
+
+        try {
+            final char echoChar = 'R';
+            final WinKeyCommand echoTestCommand = new EchoTestCommand(echoChar);
+
+            for (int retry = 1; Instant.now().isBefore(responseDeadline); retry++) {
+                this.outputStream.write(echoTestCommand.toProtocolBytes());
+
+                try {
+                    final int data = readData();
+                    final char response = (char) data;
+
+                    if (response == echoChar) {
+                        startSerialPortReaderThread();
+                        context.transitionToState(WinKeyState.READY);
+                        return;
+                    }
+                } catch(final SerialPortTimeoutException e) {
+                    LOGGER.debug("Waiting for response timed out on attempt #{}", retry);
+                }
+            }
+        } catch(final IOException e) {
+            throw new WinKeyRuntimeException("Sending and waiting on response failed", e);
+        }
+
+        throw new TimeoutException("Failed to initialize transport");
     }
 
     @Override
@@ -160,19 +183,38 @@ public class WinKeySerialTransport implements WinKeyTransport {
             LOGGER.info("Successfully stopped serial port reader thread");
         }
     }
-
+   
     @Override
     public WinKeyJob submitJob(final WinKeyCommand command, final CompletableFuture<WinKeyResponse> jobResult) throws WinKeyApplicationException {
-        return this.submitJob(command, jobResult, true);
+        return submitJob(command, jobResult, true);
     }
 
-    private WinKeyJob submitJob(final WinKeyCommand command, final CompletableFuture<WinKeyResponse> jobResult, final boolean doSend) throws WinKeyApplicationException {
+    public WinKeyJob submitJob(final WinKeyCommand command, final CompletableFuture<WinKeyResponse> jobResult, final boolean doSend) throws WinKeyApplicationException {
+        if (context.getState() != WinKeyState.READY) {
+            throw new IllegalStateException("Transport is not ready");
+        }
+
         final WinKeyJob job = new WinKeyJob(command, jobResult);
-        this.jobQueue.submit(job, queuedJob -> {
-            if (doSend) {
-                this.sendCommand(queuedJob);
+
+        try {
+            this.jobQueue.lock();
+
+            if (!this.jobQueue.offer(job)) {
+                throw new WinKeyRuntimeException(formatError("Failed to queue job {0}", job));
             }
-        });
+
+            if (doSend) {
+                try {
+                    this.sendCommand(job);
+                } catch (final WinKeyApplicationException | RuntimeException exception) {
+                    this.jobQueue.pollLast();
+                    throw exception;
+                }
+            }
+        } finally {
+            this.jobQueue.unlock();
+        }
+
         return job;
     }
 
@@ -258,9 +300,9 @@ public class WinKeySerialTransport implements WinKeyTransport {
     }
 
     private boolean isOutOfBandHandled(final int data) {
-        final WinKeyJob activeJob = peekActiveJob();
+        final WinKeyJob job = this.jobQueue.peek();
 
-        if (activeJob == null) {
+        if (job == null) {
             LOGGER.debug("Out of band data handled {}", (char) data);
             return true;
         }
@@ -277,19 +319,18 @@ public class WinKeySerialTransport implements WinKeyTransport {
     }
 
     private void processActiveJob() throws IOException {
-        final WinKeyJob activeJob = peekActiveJob();
+        final WinKeyJob job = this.jobQueue.peek();
 
-        if (activeJob == null) {
+        if (job == null) {
             return;
         }
 
-        final CommandInfo commandInfo = activeJob.command().getCommandInfo();
+        final CommandInfo commandInfo = job.command().getCommandInfo();
         final Class<WinKeyResponse> responseType = commandInfo.responseType();
 
         if (responseType.equals(EmptyResponse.class)) {
             final EmptyResponse emptyResponse = new EmptyResponse();
-            consumeActiveJob(emptyResponse);
-            LOGGER.debug("Completed job {} with response {}", activeJob, emptyResponse);
+            completeActiveJob(emptyResponse);
         } else {
             final ResponseConfiguration responseConfiguration = responseType.getAnnotation(ResponseConfiguration.class);
             final int expectedResponseByte = responseConfiguration.expectedResponseBytes();
@@ -304,12 +345,11 @@ public class WinKeySerialTransport implements WinKeyTransport {
             try {
                 final Method factory = responseType.getMethod("fromProtocol", byte[].class);
                 final WinKeyResponse response = (WinKeyResponse) factory.invoke(null, buffer);
-                consumeActiveJob(response);
-                LOGGER.debug("Completed job {} with response {}", activeJob, response);
+                completeActiveJob(response);
             } catch (final NoSuchMethodException | SecurityException | IllegalAccessException | InvocationTargetException e) {
                 final String message = MessageFormat.format(
                     "Failed to create response for active job {0}",
-                    activeJob
+                    job
                 );
 
                 throw new WinKeyRuntimeException(message, e);
@@ -317,12 +357,19 @@ public class WinKeySerialTransport implements WinKeyTransport {
         }
     }
 
-    private WinKeyJob peekActiveJob() {
-        return this.jobQueue.peekActiveJob();
-    }
+    private void completeActiveJob(final WinKeyResponse response) {
+        try {
+            this.jobQueue.lock();
 
-    private void consumeActiveJob(final WinKeyResponse response) {
-        this.jobQueue.consumeActiveJob(response, this::updateStatusMode);
+            final WinKeyJob job = this.jobQueue.poll();
+            final CompletableFuture<WinKeyResponse> responseHolder = job.response();
+
+            responseHolder.complete(response);
+
+            updateStatusMode(job.command());
+        } finally {
+            this.jobQueue.unlock();
+        }
     }
 
     private void updateStatusMode(final WinKeyCommand command) {
@@ -361,5 +408,9 @@ public class WinKeySerialTransport implements WinKeyTransport {
         }
 
         return receivedBytes;
+    }
+
+    private String formatError(final String pattern, final Object ... args) {
+        return MessageFormat.format(pattern, args);
     }
 }

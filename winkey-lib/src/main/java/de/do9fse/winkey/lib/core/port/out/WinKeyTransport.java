@@ -1,6 +1,8 @@
 package de.do9fse.winkey.lib.core.port.out;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import de.do9fse.winkey.lib.core.model.WinKeyJob;
 import de.do9fse.winkey.lib.core.model.commands.WinKeyCommand;
@@ -21,6 +23,26 @@ public interface WinKeyTransport extends AutoCloseable {
      */
     void open() throws WinKeyApplicationException;
 
+
+    /**
+     * Initializes the transport by sending an echo-test command and waiting for the
+     * matching response. The command is sent again whenever a serial read times out.
+     * Once the response is received, the transport starts its background reader and
+     * becomes ready to accept jobs.
+     *
+     * <p>The transport must be in the initializing state before this method is called.
+     * The serial port's read timeout should be configured to a suitable value because
+     * it determines how long each read can block while this method waits.</p>
+     *
+     * @param timeout the maximum time to wait for the echo response
+     * @param unit the time unit of {@code timeout}
+     * @throws TimeoutException if the echo response is not received before the timeout
+     * @throws WinKeyRuntimeException if sending the command or reading the response fails
+     * @throws IllegalStateException if the transport is not initializing
+     * @throws IllegalArgumentException if {@code timeout} is not positive
+     * @throws NullPointerException if {@code unit} is {@code null}
+     */
+    void initialize(final long timeout, final TimeUnit unit) throws TimeoutException, WinKeyRuntimeException;
 
     /**    (non-Javadoc)
      * @throws WinKeyApplicationException If port is not open

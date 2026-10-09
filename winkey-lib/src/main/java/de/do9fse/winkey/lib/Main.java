@@ -12,28 +12,24 @@ import org.slf4j.LoggerFactory;
 
 import com.fazecast.jSerialComm.SerialPort;
 
+import de.do9fse.winkey.lib.core.model.ApplicationContext;
+import de.do9fse.winkey.lib.core.model.WinKeyProtocolVersion;
 import de.do9fse.winkey.lib.core.model.commands.WinKeyCommand;
-import de.do9fse.winkey.lib.core.model.commands.host.SetModeCommand;
-import de.do9fse.winkey.lib.core.model.commands.host.SetSpeedCommand;
-import de.do9fse.winkey.lib.core.model.configuration.KeyMode;
-import de.do9fse.winkey.lib.core.model.configuration.ModeRegister;
-import de.do9fse.winkey.lib.core.model.configuration.WPMSpeedWithReset;
 import de.do9fse.winkey.lib.core.model.error.WinKeyApplicationException;
 import de.do9fse.winkey.lib.core.model.error.WinKeyRuntimeException;
-import de.do9fse.winkey.lib.core.model.responses.EmptyResponse;
 import de.do9fse.winkey.lib.core.model.responses.WinKeyResponse;
+import de.do9fse.winkey.lib.core.port.out.WinKeyJobQueue;
 import de.do9fse.winkey.lib.core.port.out.WinKeyTransport;
+import de.do9fse.winkey.lib.infrastructure.winkey.DefaultWinKeyJobQueue;
 import de.do9fse.winkey.lib.infrastructure.winkey.transport.serial.WinKeySerialTransport;
-import tech.units.indriya.AbstractUnit;
-import tech.units.indriya.quantity.Quantities;
 
 public final class Main {
     private static final Logger LOGGER = LoggerFactory.getLogger(Main.class);
 
     public static final int ERROR_OPEN = -1;
 
+    private ApplicationContext context;
     private String portName;
-    private SerialPort port;
 
     private WinKeyTransport transport;
 
@@ -51,15 +47,23 @@ public final class Main {
         this.portName = portName;
     }
 
-    private void run() throws WinKeyApplicationException {       
-        start();
-        waitForExit();
-        stop();
+    private void run() throws WinKeyApplicationException {
+        try {
+            start();
+            waitForExit();
+            stop();
+        } catch (final WinKeyApplicationException | RuntimeException | TimeoutException e) {
+            LOGGER.error("Application failed", e);
+        }
     }
 
-    private void start() throws WinKeyApplicationException {
+    private void start() throws WinKeyApplicationException, RuntimeException, TimeoutException {
         setRootLogLevel("DEBUG");
-        createSerialTransport();
+        this.context = crateApplicationContext();
+        this.transport = createSerialTransport(this.context, this.portName);
+
+        this.transport.open();
+        this.transport.initialize(10, TimeUnit.SECONDS);
     }
 
     private void waitForExit() throws WinKeyRuntimeException {
@@ -77,38 +81,19 @@ public final class Main {
         }
     }
 
-    private void createSerialTransport() throws WinKeyApplicationException {
-        // Create serial port configuration with WinKey default values
-        this.port = SerialPort.getCommPort(portName);
-        this.port.setBaudRate(1200);
+    private ApplicationContext crateApplicationContext() {
+        return new ApplicationContext(WinKeyProtocolVersion.V2);
+    }
+
+    private WinKeyTransport createSerialTransport(final ApplicationContext context, final String portName) {
+        final SerialPort port = SerialPort.getCommPort(portName);
+        port.setBaudRate(1200);
         port.setComPortTimeouts(SerialPort.TIMEOUT_READ_BLOCKING, 1000, 0);
 
-        transport = new WinKeySerialTransport(port);
-        transport.open();
+        final WinKeyJobQueue jobQueue = new DefaultWinKeyJobQueue();
+        final WinKeyTransport transport = new WinKeySerialTransport(context, jobQueue, port);
 
-        final EmptyResponse setModeCommandResponse = (EmptyResponse) executeCommand(
-            transport,
-            new SetModeCommand(
-                new ModeRegister(
-                    true, 
-                    true,
-                    KeyMode.IAMBIC_B,
-                    false,
-                    false,
-                    false,
-                    false
-                )
-            )
-        );
-        LOGGER.info("Set mode command succeeded: {}", setModeCommandResponse);
-
-        final EmptyResponse response = (EmptyResponse) executeCommand(
-            transport,
-            new SetSpeedCommand(
-                new WPMSpeedWithReset(Quantities.getQuantity(0, AbstractUnit.ONE))
-            )
-        );
-        LOGGER.info("Set speed command succeeded: {}", response);
+        return transport;
     }
 
     private void setRootLogLevel(String levelName) {
