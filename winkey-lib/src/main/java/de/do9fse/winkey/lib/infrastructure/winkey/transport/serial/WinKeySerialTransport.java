@@ -61,9 +61,9 @@ public class WinKeySerialTransport implements WinKeyTransport {
 
     private final HexFormat formatter = HexFormat.of().withPrefix("0x").withSuffix(" ");
 
-    public WinKeySerialTransport(final ApplicationContext context, final WinKeyJobQueue jobQueue, final SerialPort serialPort) {
+    public WinKeySerialTransport(final ApplicationContext context, final SerialPort serialPort) {
         this.context = Objects.requireNonNull(context, "Application context must not be null");
-        this.jobQueue = Objects.requireNonNull(jobQueue, "Job queue must not be null");
+        this.jobQueue = Objects.requireNonNull(context.getJobQueue(), "Job queue must not be null");
         this.serialPort = Objects.requireNonNull(serialPort, "Serial port must not be null");
     }
 

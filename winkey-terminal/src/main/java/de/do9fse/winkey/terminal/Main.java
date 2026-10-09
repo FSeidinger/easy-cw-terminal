@@ -5,13 +5,22 @@ import java.lang.reflect.Method;
 
 import org.jline.shell.CommandGroup;
 import org.jline.shell.Shell;
+import org.jline.shell.impl.DefaultCommandDispatcher;
 import org.jline.shell.impl.SimpleCommandGroup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import de.do9fse.winkey.lib.core.model.ApplicationContext;
+import de.do9fse.winkey.lib.core.model.WinKeyProtocolVersion;
+
 public class Main {
     private static final Logger LOGGER = LoggerFactory.getLogger(Main.class);
-    
+   
+    final CommandGroup applicationCommands = new SimpleCommandGroup(
+        "application",
+        new SetVersionCommand()
+    );
+
     final CommandGroup transportCommands = new SimpleCommandGroup(
         "device",
         new ConnectCommand(),
@@ -19,14 +28,18 @@ public class Main {
     );
 
     public void run() {
-        setRootLogLevel("OFF");
-
         try (final Shell shell = Shell
             .builder()
-            .groups(transportCommands)
+            .groups(applicationCommands, transportCommands)
             .prompt("cw> ")
             .build()
         ) {
+            setRootLogLevel("OFF");
+            final ApplicationContext context = new ApplicationContext(WinKeyProtocolVersion.V1);
+
+            final DefaultCommandDispatcher dispatcher = (DefaultCommandDispatcher) shell.dispatcher();
+            dispatcher.session().put(Constants.APPLICATION_CONTEXT_KEY, context);
+
             shell.run();
         } catch (final Exception e) {
             LOGGER.error("Shell failed", e);
