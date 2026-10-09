@@ -1,16 +1,19 @@
 {
     "cSpell.ignoreWords": [
         "EEPROM",
+        "HSCW",
         "MILLI",
         "classgraph",
         "fazecast",
-        "HSCW",
         "indriya",
         "inmemory",
         "jacoco",
         "javax",
+        "jline",
+        "jshell",
         "logback",
         "mvnw",
+        "picocli",
         "rawtypes",
         "testtools"
     ],
@@ -35,7 +38,7 @@
     "java.codeGeneration.addFinalForNewDeclaration": "all",
     "java.jdt.ls.vmargs": "-XX:+UseG1GC -XX:+UseStringDeduplication -Xms2G -Xmx8G",
     "java.project.explorer.showNonJavaResources": true,
-    "java.dependency.packagePresentation": "hierarchical",
+    "java.dependency.packagePresentation": "flat",
     "java.completion.favoriteStaticMembers": [
         "javax.measure.MetricPrefix.*",
         "org.junit.Assert.*",

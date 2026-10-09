@@ -2,8 +2,8 @@
 
 This project brings Java and WinKey together. The `winkey-lib` module models
 the WinKey protocol and provides an interface for communicating with a WinKey
-device. The project is still growing, but its Maven structure is ready for
-more modules as things evolve.
+device. The `winkey-terminal` module is the terminal application module and
+depends on `winkey-lib`.
 
 ## 🛠️ Build
 
@@ -33,7 +33,8 @@ The repository is a Maven multi-module project:
 ```text
 .
 ├── pom.xml       # Aggregator POM: shared versions and build configuration
-└── winkey-lib/   # Java library for WinKey
+├── winkey-lib/   # Java library for WinKey
+└── winkey-terminal/ # Terminal application module
 ```
 
 - **Aggregator (`winkey-pom`)**: Has `pom` packaging and manages shared
@@ -41,6 +42,8 @@ The repository is a Maven multi-module project:
 - **`winkey-lib`**: Contains the WinKey model — including commands,
   configuration, and responses — along with transport interfaces and a serial
   transport implementation. Serial communication is handled by jSerialComm.
+- **`winkey-terminal`**: Application module for the terminal, with a dependency
+  on `winkey-lib`.
 
 In short: the model describes *what* is sent to or received from WinKey, while
 the transport takes care of *how* those bytes travel to and from the device. 📡
